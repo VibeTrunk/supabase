@@ -1,0 +1,4 @@
+.env*
+!.env.example
+supabase/.temp/
+*.sql.bak

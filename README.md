@@ -15,3 +15,11 @@ Central migration catalogue for the single shared VibeTrunk Supabase project.
 Individual tool repositories must never attempt to deploy their migrations to
 the shared project. This prevents Supabase's global migration ledger from
 mistaking another tool's already-applied migration for missing local work.
+
+## Current hosted ledger
+
+The shared ledger contains Cogitster's deployed
+`202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
+`20260817030000_private_live_ratings.sql`. Cogitster's pending
+`202608160002_lock_down_trigger_execute.sql` is intentionally absent until its
+own release is approved.

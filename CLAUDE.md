@@ -31,4 +31,4 @@ application code, and local database tests.
   not catalogued yet because it has not been applied and is unrelated to the
   KUT release.
 - KUT migrations through `20260817030000_private_live_ratings.sql` are
-  catalogued for the first KUT hosted release.
+  catalogued and applied to the hosted project.

@@ -30,5 +30,6 @@ application code, and local database tests.
 - Cogitster's `202608160002_lock_down_trigger_execute.sql` is intentionally
   not catalogued yet because it has not been applied and is unrelated to the
   KUT release.
-- KUT migrations through `20260817030000_private_live_ratings.sql` are
-  catalogued and applied to the hosted project.
+- KUT migrations through
+  `20260818000000_initial_tfh_roster_and_august_sessions.sql` are catalogued
+  and applied to the hosted project.

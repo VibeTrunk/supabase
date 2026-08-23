@@ -33,3 +33,10 @@ application code, and local database tests.
 - KUT migrations through
   `20260818000000_initial_tfh_roster_and_august_sessions.sql` are catalogued
   and applied to the hosted project.
+
+## Repo status
+
+- Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs
+  required, direct pushes blocked including for admins). See the global
+  `~/.claude/CLAUDE.md` "Branch workflow" section for the actual branch/PR
+  conventions to follow.

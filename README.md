@@ -24,6 +24,10 @@ The shared ledger contains Cogitster's deployed
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
+KUT's `20260830000000` / `20260831000000` / `20260901000000` are **catalogued
+but not yet applied** — they deploy together as one batch once KUT PR #8 and
+this PR are approved.
+
 - `20260818000000_initial_tfh_roster_and_august_sessions.sql` (applied
   2026-08-18): the first real TFH roster/attendance data, and the reweighted
   activity rating formula from KUT's ADR-024.
@@ -36,3 +40,17 @@ until its own release is approved.
   `admin_set_player_active` / `admin_delete_player` (ADR-026) — so admins add
   and remove TFH members from `/admin/roster` instead of a migration per
   roster change.
+- `20260830000000_member_self_service_and_player_directory.sql`,
+  `20260831000000_admin_links_username_and_attendance_messages.sql`,
+  `20260901000000_admin_manage_accounts_and_leaderboard.sql` (**catalogued
+  2026-08-29, not yet applied**): KUT's alpha-readiness batch (ADR-027..030).
+  Adds the member-facing `player_directory` view and two ownership-gated
+  self-service RPCs (own card photo + archetype), a **private `player-photos`
+  storage bucket** with folder-scoped `storage.objects` RLS, `profiles.username`
+  as a login handle, `admin_set_profile_player` / `admin_set_account_disabled`
+  / `admin_prepare_account_deletion`, a dated attendance-reward inbox message
+  with the amount raised 75 → 250 (not retroactive), and makes
+  `club_value_leaderboard` members-only. Touches the `storage` schema and
+  widens `public_live_ratings` / `my_collection_cards` / `club_value_leaderboard`
+  (`create or replace view`, append-only). Rollback DDL is in each migration
+  header.

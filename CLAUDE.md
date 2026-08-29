@@ -31,11 +31,14 @@ application code, and local database tests.
   not catalogued yet because it has not been applied and is unrelated to the
   KUT release.
 - KUT migrations through
-  `20260829000000_august_2026_full_month_roster_and_sessions.sql` are
-  catalogued and applied to the hosted project. The most recent
-  (`20260829000000`, applied 2026-08-29) completed August 2026: sessions
-  21.08 / 28.08 and four new 2+-appearance players (Steffen, Serhat, Stephen,
-  Maarten).
+  `20260829130000_admin_manage_roster.sql` are catalogued and applied to the
+  hosted project. `20260829000000` (applied 2026-08-29) completed August
+  2026: sessions 21.08 / 28.08 and four new 2+-appearance players (Steffen,
+  Serhat, Stephen, Maarten). `20260829120000_admin_add_player.sql` and
+  `20260829130000_admin_manage_roster.sql` (applied 2026-08-29) are
+  function-only: KUT's server-authoritative roster RPCs (`admin_add_player`,
+  ADR-025; `admin_set_player_active` / `admin_delete_player`, ADR-026) so the
+  roster is managed from `/admin/roster` rather than a migration each time.
 
 ## Repo status
 

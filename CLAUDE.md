@@ -33,6 +33,10 @@ application code, and local database tests.
 - KUT migrations through
   `20260818000000_initial_tfh_roster_and_august_sessions.sql` are catalogued
   and applied to the hosted project.
+- `20260829000000_august_2026_full_month_roster_and_sessions.sql` is
+  catalogued but not yet applied (the rest of August 2026: sessions 21.08 /
+  28.08 and four new 2+-appearance players). Awaiting its own backup /
+  dry-run / approval.
 
 ## Repo status
 

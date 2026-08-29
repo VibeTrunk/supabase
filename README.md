@@ -25,3 +25,9 @@ The shared ledger contains Cogitster's deployed
 activity rating formula from KUT's ADR-024). Cogitster's pending
 `202608160002_lock_down_trigger_execute.sql` is intentionally absent until its
 own release is approved.
+
+`20260829000000_august_2026_full_month_roster_and_sessions.sql` is catalogued
+but **not yet applied** to the shared project: it adds the two remaining
+August 2026 sessions (21.08, 28.08) and four players who reached 2+
+appearances (Steffen, Serhat, Stephen, Maarten). Pending its own
+backup / dry-run / approval before `supabase db push`.

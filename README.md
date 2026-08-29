@@ -20,13 +20,9 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260829130000_admin_manage_roster.sql`. Cogitster's
+`20260901000000_admin_manage_accounts_and_leaderboard.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
-
-KUT's `20260830000000` / `20260831000000` / `20260901000000` are **catalogued
-but not yet applied** — they deploy together as one batch once KUT PR #8 and
-this PR are approved.
 
 - `20260818000000_initial_tfh_roster_and_august_sessions.sql` (applied
   2026-08-18): the first real TFH roster/attendance data, and the reweighted
@@ -42,8 +38,8 @@ this PR are approved.
   roster change.
 - `20260830000000_member_self_service_and_player_directory.sql`,
   `20260831000000_admin_links_username_and_attendance_messages.sql`,
-  `20260901000000_admin_manage_accounts_and_leaderboard.sql` (**catalogued
-  2026-08-29, not yet applied**): KUT's alpha-readiness batch (ADR-027..030).
+  `20260901000000_admin_manage_accounts_and_leaderboard.sql` (**applied
+  2026-08-30**): KUT's alpha-readiness batch (ADR-027..030).
   Adds the member-facing `player_directory` view and two ownership-gated
   self-service RPCs (own card photo + archetype), a **private `player-photos`
   storage bucket** with folder-scoped `storage.objects` RLS, `profiles.username`

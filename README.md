@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260829000000_august_2026_full_month_roster_and_sessions.sql`. Cogitster's
+`20260829130000_admin_manage_roster.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -30,3 +30,9 @@ until its own release is approved.
 - `20260829000000_august_2026_full_month_roster_and_sessions.sql` (applied
   2026-08-29): the two remaining August 2026 sessions (21.08, 28.08) and four
   players who reached 2+ appearances (Steffen, Serhat, Stephen, Maarten).
+- `20260829120000_admin_add_player.sql` and
+  `20260829130000_admin_manage_roster.sql` (applied 2026-08-29): function-only.
+  KUT's server-authoritative roster RPCs — `admin_add_player` (ADR-025) plus
+  `admin_set_player_active` / `admin_delete_player` (ADR-026) — so admins add
+  and remove TFH members from `/admin/roster` instead of a migration per
+  roster change.

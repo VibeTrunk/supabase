@@ -40,7 +40,9 @@ $expectedSources = @(
   @{ File = "20260817020100_include_buyer_in_sale_notifications.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260817020100_include_buyer_in_sale_notifications.sql" },
   @{ File = "20260817030000_private_live_ratings.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260817030000_private_live_ratings.sql" },
   @{ File = "20260818000000_initial_tfh_roster_and_august_sessions.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260818000000_initial_tfh_roster_and_august_sessions.sql" },
-  @{ File = "20260829000000_august_2026_full_month_roster_and_sessions.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260829000000_august_2026_full_month_roster_and_sessions.sql" }
+  @{ File = "20260829000000_august_2026_full_month_roster_and_sessions.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260829000000_august_2026_full_month_roster_and_sessions.sql" },
+  @{ File = "20260829120000_admin_add_player.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260829120000_admin_add_player.sql" },
+  @{ File = "20260829130000_admin_manage_roster.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260829130000_admin_manage_roster.sql" }
 )
 
 foreach ($entry in $expectedSources) {

@@ -20,14 +20,13 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260818000000_initial_tfh_roster_and_august_sessions.sql` (applied
-2026-08-18: the first real TFH roster/attendance data, and the reweighted
-activity rating formula from KUT's ADR-024). Cogitster's pending
-`202608160002_lock_down_trigger_execute.sql` is intentionally absent until its
-own release is approved.
+`20260829000000_august_2026_full_month_roster_and_sessions.sql`. Cogitster's
+pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
+until its own release is approved.
 
-`20260829000000_august_2026_full_month_roster_and_sessions.sql` is catalogued
-but **not yet applied** to the shared project: it adds the two remaining
-August 2026 sessions (21.08, 28.08) and four players who reached 2+
-appearances (Steffen, Serhat, Stephen, Maarten). Pending its own
-backup / dry-run / approval before `supabase db push`.
+- `20260818000000_initial_tfh_roster_and_august_sessions.sql` (applied
+  2026-08-18): the first real TFH roster/attendance data, and the reweighted
+  activity rating formula from KUT's ADR-024.
+- `20260829000000_august_2026_full_month_roster_and_sessions.sql` (applied
+  2026-08-29): the two remaining August 2026 sessions (21.08, 28.08) and four
+  players who reached 2+ appearances (Steffen, Serhat, Stephen, Maarten).

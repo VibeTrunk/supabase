@@ -39,8 +39,8 @@ application code, and local database tests.
   function-only: KUT's server-authoritative roster RPCs (`admin_add_player`,
   ADR-025; `admin_set_player_active` / `admin_delete_player`, ADR-026) so the
   roster is managed from `/admin/roster` rather than a migration each time.
-- `20260830000000` / `20260831000000` / `20260901000000` (catalogued
-  2026-08-29, **not yet applied**): KUT's alpha-readiness batch, ADR-027..030.
+- `20260830000000` / `20260831000000` / `20260901000000` (**applied
+  2026-08-30**): KUT's alpha-readiness batch, ADR-027..030.
   Member `player_directory` view + ownership-gated self-service RPCs (own card
   photo + archetype), a private `player-photos` storage bucket with
   folder-scoped `storage.objects` RLS, `profiles.username` login handle,
@@ -48,7 +48,9 @@ application code, and local database tests.
   `admin_prepare_account_deletion`, a dated attendance-reward inbox message
   (amount 75 → 250, not retroactive), and a members-only
   `club_value_leaderboard`. First migration to touch the `storage` schema.
-  Deploys as one batch after KUT PR #8 is approved.
+  Pushed as one batch from this repo after KUT PR #8 merged; the
+  `player-photos` bucket (private, 5 MiB, webp/jpeg/png) and its four
+  `storage.objects` policies were confirmed on the hosted project.
 
 ## Repo status
 

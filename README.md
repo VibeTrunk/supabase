@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260902000000_starter_reveal_and_rating_snapshots.sql`. Cogitster's
+`20260903000000_drop_is_tradeable.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -58,3 +58,15 @@ until its own release is approved.
   `kut.my_pack_opening_results` with `players.photo_path` (`create or replace
   view`, append-only). A migration-time seed inserts the current week's
   snapshots. Rollback DDL is in the migration header.
+- `20260903000000_drop_is_tradeable.sql` (**applied 2026-08-31**): KUT's
+  ADR-033 — retires the untradeable card concept. Drops
+  `kut.user_cards.is_tradeable`, rebuilds the `kut.my_collection_cards` view
+  (`drop view` + `create view` — a column can't be removed via `create or
+  replace view`), and recreates `grant_starter_pack`, `open_pack`,
+  `discard_card`, `get_listing_bounds`, `create_listing`, `buy_listing`
+  without the flag. Data-changing tier (ADR-032): a fresh encrypted
+  `kut`-schema backup was taken immediately before the push; reverse DDL is
+  in the migration header and is lossless (every surviving row was
+  `is_tradeable = true`). Pushed from this repo 2026-08-31 after KUT PR #17
+  merged; hosted dump confirms zero `is_tradeable` references, the six
+  recreated functions, and `user_cards` with no such column.

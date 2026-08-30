@@ -50,3 +50,12 @@ until its own release is approved.
   widens `public_live_ratings` / `my_collection_cards` / `club_value_leaderboard`
   (`create or replace view`, append-only). Rollback DDL is in each migration
   header.
+- `20260902000000_starter_reveal_and_rating_snapshots.sql` (**catalogued
+  2026-08-30, not yet applied**): KUT's ADR-031. `kut.player_rating_snapshots`
+  + an `after`-trigger on `kut.player_season_state` that upserts a per-week OVR
+  snapshot, the `kut.top_risers` view, `kut.profiles.starter_opened_at`
+  (backfilled `= starter_claimed_at`), `kut.mark_starter_opened()`, and widens
+  `kut.my_pack_opening_results` with `players.photo_path` (`create or replace
+  view`, append-only). A migration-time seed inserts the current week's
+  snapshots. Rollback DDL is in the migration header. KUT PR #10's front end
+  already expects these objects.

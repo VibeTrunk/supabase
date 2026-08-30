@@ -51,6 +51,18 @@ application code, and local database tests.
   Pushed as one batch from this repo after KUT PR #8 merged; the
   `player-photos` bucket (private, 5 MiB, webp/jpeg/png) and its four
   `storage.objects` policies were confirmed on the hosted project.
+- `20260902000000_starter_reveal_and_rating_snapshots.sql` (**catalogued
+  2026-08-30, not yet applied**): KUT's ADR-031. Adds
+  `kut.player_rating_snapshots` + an `after`-trigger on
+  `kut.player_season_state` (`kut.capture_rating_snapshot`) that upserts a
+  per-week OVR snapshot keyed on `last_week_start`, the `kut.top_risers` view
+  (two-most-recent-weeks positive delta), `kut.profiles.starter_opened_at`
+  (backfilled `= starter_claimed_at`), `kut.mark_starter_opened()`, and
+  widens `kut.my_pack_opening_results` with `players.photo_path` (`create or
+  replace view`, append-only). Migration-time seed inserts the current week's
+  snapshots. Rollback DDL is in the migration header. Deploys after KUT PR #10
+  is merged (its front end already expects these objects, so hosted signed-in
+  pages error until this lands).
 
 ## Repo status
 

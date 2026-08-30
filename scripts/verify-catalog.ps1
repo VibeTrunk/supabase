@@ -45,7 +45,8 @@ $expectedSources = @(
   @{ File = "20260829130000_admin_manage_roster.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260829130000_admin_manage_roster.sql" },
   @{ File = "20260830000000_member_self_service_and_player_directory.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260830000000_member_self_service_and_player_directory.sql" },
   @{ File = "20260831000000_admin_links_username_and_attendance_messages.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260831000000_admin_links_username_and_attendance_messages.sql" },
-  @{ File = "20260901000000_admin_manage_accounts_and_leaderboard.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260901000000_admin_manage_accounts_and_leaderboard.sql" }
+  @{ File = "20260901000000_admin_manage_accounts_and_leaderboard.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260901000000_admin_manage_accounts_and_leaderboard.sql" },
+  @{ File = "20260902000000_starter_reveal_and_rating_snapshots.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260902000000_starter_reveal_and_rating_snapshots.sql" }
 )
 
 foreach ($entry in $expectedSources) {

@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260901000000_admin_manage_accounts_and_leaderboard.sql`. Cogitster's
+`20260902000000_starter_reveal_and_rating_snapshots.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -50,12 +50,11 @@ until its own release is approved.
   widens `public_live_ratings` / `my_collection_cards` / `club_value_leaderboard`
   (`create or replace view`, append-only). Rollback DDL is in each migration
   header.
-- `20260902000000_starter_reveal_and_rating_snapshots.sql` (**catalogued
-  2026-08-30, not yet applied**): KUT's ADR-031. `kut.player_rating_snapshots`
+- `20260902000000_starter_reveal_and_rating_snapshots.sql` (**applied
+  2026-08-30**): KUT's ADR-031. `kut.player_rating_snapshots`
   + an `after`-trigger on `kut.player_season_state` that upserts a per-week OVR
   snapshot, the `kut.top_risers` view, `kut.profiles.starter_opened_at`
   (backfilled `= starter_claimed_at`), `kut.mark_starter_opened()`, and widens
   `kut.my_pack_opening_results` with `players.photo_path` (`create or replace
   view`, append-only). A migration-time seed inserts the current week's
-  snapshots. Rollback DDL is in the migration header. KUT PR #10's front end
-  already expects these objects.
+  snapshots. Rollback DDL is in the migration header.

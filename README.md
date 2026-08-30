@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260903000000_drop_is_tradeable.sql`. Cogitster's
+`20260904000000_canonical_coin_name.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -70,3 +70,20 @@ until its own release is approved.
   `is_tradeable = true`). Pushed from this repo 2026-08-31 after KUT PR #17
   merged; hosted dump confirms zero `is_tradeable` references, the six
   recreated functions, and `user_cards` with no such column.
+- `20260904000000_canonical_coin_name.sql` (**applied 2026-08-31**): KUT's
+  ADR-034 (tester feedback #7). "KUT Coins" is now the one currency name.
+  `create or replace` of `kut.open_pack` + `kut.buy_listing` (latest
+  `20260903000000` bodies) with `TF Coins` → `KUT Coins` in the two
+  insufficient-funds `raise` strings and the two `market_purchase` /
+  `market_sale` notification `format()` bodies, then a one-shot
+  `update kut.user_notifications set body = replace(body, 'TF Coins', 'KUT
+  Coins') where event_type in ('market_purchase','market_sale') and body like
+  '%TF Coins%'` for rows already on hosted. Data-changing tier (ADR-032) only
+  for that backfill: fresh encrypted backup immediately before the push;
+  reverse `replace()` in the migration header, scoped to the same
+  `event_type`s so it is lossless (`attendance_reward` bodies already said
+  "KUT Coins"). No economy value, ledger `reason`, column, price, or formula
+  change. Pushed from this repo 2026-08-31 after KUT PR #19 merged; a hosted
+  `kut` dump shows zero `TF Coins` references and "KUT Coins" in both
+  `open_pack` / `buy_listing` raises and both `buy_listing` notification
+  bodies.

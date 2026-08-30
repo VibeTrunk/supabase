@@ -76,6 +76,19 @@ application code, and local database tests.
   KUT PR #17 merged; a hosted `kut` dump confirms zero `is_tradeable`
   references, the six recreated functions, and `user_cards` without the
   column.
+- `20260904000000_canonical_coin_name.sql` (**applied 2026-08-31**): KUT's
+  ADR-034 (tester feedback #7). "KUT Coins" becomes the one currency name.
+  `create or replace` of `open_pack` + `buy_listing` (latest `20260903000000`
+  bodies) with `TF Coins` → `KUT Coins` in the two insufficient-funds `raise`
+  strings and the two `market_purchase` / `market_sale` notification
+  `format()` bodies, then a one-shot backfill of existing
+  `kut.user_notifications` rows scoped to those event types. Data-changing
+  tier (ADR-032) only for the backfill `UPDATE`: fresh encrypted backup
+  immediately before the push; reverse `replace()` in the migration header,
+  scoped so it is lossless (`attendance_reward` bodies already said "KUT
+  Coins"). No economy value, ledger `reason`, column, price, or formula
+  change. Pushed from this repo 2026-08-31 after KUT PR #19 merged; a hosted
+  `kut` dump shows zero `TF Coins` references.
 
 ## Repo status
 

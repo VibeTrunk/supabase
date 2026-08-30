@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260904000000_canonical_coin_name.sql`. Cogitster's
+`20260905000000_admin_economy_tools.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -87,3 +87,28 @@ until its own release is approved.
   `kut` dump shows zero `TF Coins` references and "KUT Coins" in both
   `open_pack` / `buy_listing` raises and both `buy_listing` notification
   bodies.
+- `20260905000000_admin_economy_tools.sql` (**applied 2026-08-31**): KUT's
+  ADR-035 (tester feedback #8 + #6). Two `is_admin()`-gated security-definer
+  RPCs, one audit table, one widened check constraint.
+  `kut.admin_adjust_wallet(uuid, bigint, text)` — audited coin faucet, both
+  directions, `abs` cap 100000 (`22023`), never below zero (`P0001`), typed
+  1–200-char reason; `wallet_ledger.reason 'admin_grant'` + a
+  `kut.admin_account_events` row + an `admin_notice` inbox message.
+  `kut.admin_reset_account(uuid, uuid)` — soft reset: cancels active listings,
+  soft-burns owned cards, deletes pack history + notifications, zeroes the
+  wallet via a `-(balance)` + `+250` ledger pair (`reason 'admin_reset'`,
+  net 250), re-grants the 3-card starter inline, nulls `starter_opened_at` to
+  replay `/welcome`; keeps `market_sales`, market ledger rows and
+  `attendance_rewards` guard rows; idempotent on `p_idempotency_key`.
+  `kut.admin_account_events` audit table (admin-read RLS like
+  `password_reset_events`). `wallet_ledger.reason` check widened with
+  `admin_grant` / `admin_reset`. **Additive tier (ADR-032)**: all `create
+  table` / `create or replace function` / one widened check; no data migration
+  (the reset mutates rows at run time), so it rode the last scheduled backup —
+  no fresh pre-push backup. Reverse DDL in the migration header (`drop
+  function` / `drop table` / restore the narrower check). Pushed from this repo
+  2026-08-31 after KUT PR #21 + catalogue PR #15 merged; a hosted `kut` dump
+  confirms `kut.admin_account_events` (+ its partial unique index and RLS
+  policy), both RPCs (`revoke … from public` + `grant … to authenticated`),
+  and `wallet_ledger_reason_check` now listing `admin_grant` + `admin_reset`.
+  `migration list --linked` shows `20260905000000` Local = Remote, no drift.

@@ -89,6 +89,25 @@ application code, and local database tests.
   Coins"). No economy value, ledger `reason`, column, price, or formula
   change. Pushed from this repo 2026-08-31 after KUT PR #19 merged; a hosted
   `kut` dump shows zero `TF Coins` references.
+- `20260905000000_admin_economy_tools.sql` (**applied 2026-08-31**): KUT's
+  ADR-035 (tester feedback #8 + #6). `kut.admin_adjust_wallet(uuid, bigint,
+  text)` — audited coin faucet, both directions, `abs` cap 100000, never below
+  zero, typed reason; `wallet_ledger.reason 'admin_grant'` + a
+  `kut.admin_account_events` row + an `admin_notice` inbox message.
+  `kut.admin_reset_account(uuid, uuid)` — soft reset: cancels active listings,
+  soft-burns owned cards, deletes pack history + notifications, zeroes the
+  wallet via a `-(balance)` + `+250` ledger pair (`reason 'admin_reset'`,
+  net 250), re-grants the 3-card starter inline, nulls `starter_opened_at` to
+  replay `/welcome`; keeps `market_sales`, market ledger rows and
+  `attendance_rewards` guard rows; idempotent on `p_idempotency_key`.
+  `kut.admin_account_events` audit table, admin-read RLS. `wallet_ledger.reason`
+  check widened with `admin_grant` / `admin_reset`. Additive tier (ADR-032):
+  all `create table` / `create or replace function` / one widened check; no
+  data migration (the reset mutates rows at run time), so it rode the last
+  scheduled backup. Reverse DDL in the migration header. Pushed from this repo
+  2026-08-31 after KUT PR #21 + catalogue PR #15 merged; a hosted `kut` dump
+  confirms `kut.admin_account_events` (+ partial unique index + RLS policy),
+  both RPCs, and `wallet_ledger_reason_check` listing the two new reasons.
 
 ## Repo status
 

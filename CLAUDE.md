@@ -64,6 +64,18 @@ application code, and local database tests.
   2026-08-30 (KUT PR #10 was already merged); `kut.player_rating_snapshots`,
   `kut.top_risers`, `kut.profiles.starter_opened_at`, `kut.mark_starter_opened`
   and `kut.my_pack_opening_results.photo_path` confirmed on the hosted project.
+- `20260903000000_drop_is_tradeable.sql` (**applied 2026-08-31**): KUT's
+  ADR-033. Retires the untradeable card concept — drops
+  `kut.user_cards.is_tradeable`, rebuilds `kut.my_collection_cards` (`drop
+  view` + `create view`, since a column can't be dropped via `create or
+  replace view`), and recreates `grant_starter_pack`, `open_pack`,
+  `discard_card`, `get_listing_bounds`, `create_listing`, `buy_listing`
+  without the flag. Data-changing tier (ADR-032): fresh encrypted backup
+  immediately before the push; lossless reverse DDL in the migration header
+  (every surviving row was `true`). Pushed from this repo 2026-08-31 after
+  KUT PR #17 merged; a hosted `kut` dump confirms zero `is_tradeable`
+  references, the six recreated functions, and `user_cards` without the
+  column.
 
 ## Repo status
 

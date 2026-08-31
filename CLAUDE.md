@@ -108,6 +108,34 @@ application code, and local database tests.
   2026-08-31 after KUT PR #21 + catalogue PR #15 merged; a hosted `kut` dump
   confirms `kut.admin_account_events` (+ partial unique index + RLS policy),
   both RPCs, and `wallet_ledger_reason_check` listing the two new reasons.
+- `20260906000000_goalkeeper_archetype.sql` /
+  `20260907000000_bibs_bonus.sql` / `20260908000000_activity_feed.sql`
+  (**applied 2026-08-31**): KUT's Batch E (tester feedback #4 / #5 / #10 —
+  ADR-036 / 037 / 038), the last tester-feedback batch. All three **additive
+  tier (ADR-032)** — one `db push` on the last scheduled backup, no fresh
+  pre-push backup; reverse DDL in each header.
+  **E1** a seventh `goalkeeper` archetype reusing the six shared attributes
+  (`pac -6, sho -12, pas 0, dri -8, def +14, phy +12`, sums to 0): widens the
+  `kut.players` archetype `check` and `create or replace`s `admin_add_player`
+  / `set_own_player_archetype` / `_rebuild_season_core` (a `when 'goalkeeper'`
+  arm on each of the six attribute `CASE`s). No player pre-assigned, so no
+  data change.
+  **E2** a `+100` KUT Coins bonus for the bibs washer, coins only: nullable
+  `kut.match_sessions.bibs_washed_by`, the `kut.bibs_rewards` guard table,
+  `kut.grant_bibs_reward(uuid)` (called from
+  `process_published_session_rewards`), `wallet_ledger.reason` +
+  `user_notifications.event_type` widened with `bibs_bonus`, and a trailing
+  `p_bibs_washed_by uuid default null` on `publish_`/`correct_` attendance
+  RPCs (old signatures dropped + recreated, since a `create or replace` can't
+  widen the arg list). Forward-only on corrections.
+  **E3** one read-only `kut.activity_feed` view (`security_invoker = false`,
+  `security_barrier = true`, `grant select to authenticated`) unioning
+  completed sales, active listings, pack openings and published sessions; the
+  sale rows expose the buyer name club-wide.
+  Pushed from this repo 2026-08-31 after KUT PRs #23 / #24 / #25 + catalogue
+  PR #17 merged; a hosted `kut` dump confirms all of the above, both attendance
+  RPCs present only as the new 5-/6-arg signatures, and no drift on the 36
+  prior migrations.
 
 ## Repo status
 

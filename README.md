@@ -20,7 +20,7 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260905000000_admin_economy_tools.sql`. Cogitster's
+`20260908000000_activity_feed.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
 
@@ -112,3 +112,45 @@ until its own release is approved.
   policy), both RPCs (`revoke … from public` + `grant … to authenticated`),
   and `wallet_ledger_reason_check` now listing `admin_grant` + `admin_reset`.
   `migration list --linked` shows `20260905000000` Local = Remote, no drift.
+- `20260906000000_goalkeeper_archetype.sql`,
+  `20260907000000_bibs_bonus.sql`,
+  `20260908000000_activity_feed.sql` (**applied 2026-08-31**): KUT's Batch E
+  (tester feedback #4 / #5 / #10 — ADR-036 / 037 / 038), the last
+  tester-feedback batch. All three **additive tier (ADR-032)** — pushed as one
+  `db push` on the last scheduled backup, no fresh pre-push backup; reverse
+  DDL in each migration header.
+  - **E1 — Goalkeeper archetype:** a seventh archetype reusing the six shared
+    attributes with its own offset row (`pac -6, sho -12, pas 0, dri -8,
+    def +14, phy +12`; sums to 0). Widens the `kut.players` archetype `check`
+    (drop auto-named inline constraint by lookup, re-add as
+    `players_archetype_check`) and `create or replace`s `admin_add_player`,
+    `set_own_player_archetype`, and `_rebuild_season_core` (a
+    `when 'goalkeeper'` arm on each of the six attribute `CASE`s — the ADR-024
+    formula restated). No player pre-assigned; the rebuild arm is inert until a
+    player opts in, so no data change.
+  - **E2 — bibs-washing coin bonus:** `+100` KUT Coins for the session's bibs
+    washer, coins only. Adds nullable `kut.match_sessions.bibs_washed_by`, the
+    `kut.bibs_rewards` guard table (PK `(session_id, player_id)`, member/admin
+    RLS — a shape match to `attendance_rewards`), `kut.grant_bibs_reward(uuid)`
+    (called from `process_published_session_rewards`), and widens
+    `wallet_ledger.reason` + `user_notifications.event_type` with `bibs_bonus`.
+    `publish_attendance_session` / `correct_published_attendance_session` each
+    gain a trailing `p_bibs_washed_by uuid default null` — a `create or
+    replace` can't widen the arg list, so the old 4-/5-arg signatures are
+    **dropped and recreated**. Forward-only on corrections.
+  - **E3 — activity newsfeed:** one read-only `kut.activity_feed` view
+    (`security_invoker = false`, `security_barrier = true`, `grant select to
+    authenticated` — the `club_value_leaderboard` pattern), `union all` of
+    completed sales, active listings, pack openings and published sessions.
+    A completed-sale row now exposes the buyer name club-wide (was
+    buyer+seller-only).
+  Pushed from this repo 2026-08-31 after KUT PRs #23 / #24 / #25 + catalogue
+  PR #17 merged. `migration list --linked` shows all three Local = Remote, no
+  drift on the 36 prior migrations. A hosted `kut` dump confirms:
+  `players_archetype_check` lists `goalkeeper` and both roster RPC allow-lists
+  carry the seven-value list; `kut.match_sessions.bibs_washed_by`,
+  `kut.bibs_rewards`, `kut.grant_bibs_reward`, and `bibs_bonus` in both widened
+  checks; `publish_/correct_` attendance functions present only as the new
+  5-/6-arg signatures (old ones gone), granted to `authenticated` +
+  `service_role`; and `kut.activity_feed` with its `authenticated` select
+  grant.

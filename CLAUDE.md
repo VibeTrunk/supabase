@@ -149,19 +149,20 @@ application code, and local database tests.
   `user_notifications.event_type` widened, `activity_feed` gains a `trade`
   row). `scripts/verify-catalog.ps1` and this catalogue note were not updated
   at the time; both are brought current in PR #20 below.
-- `20260912000000_tester_feedback_round_2.sql` (**catalogued PR #20; pending
-  the live push**): KUT's tester feedback round 2 (ADR-044), one migration for
-  four defects + three ideas. **Data-changing tier (ADR-032)** solely for a
-  scoped, reversible backfill of existing `bibs_bonus` `kut.user_notifications`
-  bodies ("washing the bibs after" → "bringing the bibs to"); the rest is
-  additive — `create or replace kut.grant_bibs_reward` (same body, one string
-  changed), new `kut.set_own_club_name(text)` self-service RPC writing the
-  dormant `kut.profiles.club_name` column, `create or replace
-  kut.club_value_leaderboard` to `coalesce` that column with the synthesised
-  `"<name>'s Club"` default (no `club_value` / `rank` change), and a new
-  additive `kut.published_sessions` summary view. Fresh encrypted backup
-  immediately before the push; full reverse DDL in the migration header.
-  Pushed from this repo after KUT PR #31 + this catalogue PR merge.
+- `20260912000000_tester_feedback_round_2.sql` (**applied 2026-09-01**): KUT's
+  tester feedback round 2 (ADR-044), one migration for four defects + three
+  ideas. **Data-changing tier (ADR-032)** solely for a scoped, reversible
+  backfill of existing `bibs_bonus` `kut.user_notifications` bodies ("washing
+  the bibs after" → "bringing the bibs to"); the rest is additive —
+  `create or replace kut.grant_bibs_reward` (same body, one string changed),
+  new `kut.set_own_club_name(text)` self-service RPC writing the dormant
+  `kut.profiles.club_name` column, `create or replace kut.club_value_leaderboard`
+  to `coalesce` that column with the synthesised `"<name>'s Club"` default (no
+  `club_value` / `rank` change), and a new additive `kut.published_sessions`
+  summary view. Fresh encrypted backup immediately before the push; full
+  reverse DDL in the migration header. Pushed from this repo 2026-09-01 after
+  KUT PR #31 + catalogue PR #20 merged; `migration list --linked` shows
+  `20260912000000` Local = Remote with no drift on the 44 prior migrations.
 
 ## Repo status
 

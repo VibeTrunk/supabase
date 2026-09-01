@@ -52,7 +52,11 @@ $expectedSources = @(
   @{ File = "20260905000000_admin_economy_tools.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260905000000_admin_economy_tools.sql" },
   @{ File = "20260906000000_goalkeeper_archetype.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260906000000_goalkeeper_archetype.sql" },
   @{ File = "20260907000000_bibs_bonus.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260907000000_bibs_bonus.sql" },
-  @{ File = "20260908000000_activity_feed.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260908000000_activity_feed.sql" }
+  @{ File = "20260908000000_activity_feed.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260908000000_activity_feed.sql" },
+  @{ File = "20260909000000_market_listing_card_art.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260909000000_market_listing_card_art.sql" },
+  @{ File = "20260910000000_club_value_v2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260910000000_club_value_v2.sql" },
+  @{ File = "20260911000000_trade_offers.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260911000000_trade_offers.sql" },
+  @{ File = "20260912000000_tester_feedback_round_2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260912000000_tester_feedback_round_2.sql" }
 )
 
 foreach ($entry in $expectedSources) {

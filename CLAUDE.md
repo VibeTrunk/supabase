@@ -136,6 +136,32 @@ application code, and local database tests.
   PR #17 merged; a hosted `kut` dump confirms all of the above, both attendance
   RPCs present only as the new 5-/6-arg signatures, and no drift on the 36
   prior migrations.
+- `20260909000000_market_listing_card_art.sql` /
+  `20260910000000_club_value_v2.sql` / `20260911000000_trade_offers.sql`
+  (**applied 2026-08-31**): KUT's tester follow-up trio (ADR-040 / 041 / 042),
+  catalogued and pushed via PR #19. `20260909` additive (`kut.active_market_listings`
+  gains `photo_path` + `seller_id`); `20260910` data-changing (Club Value v2 —
+  `my_club_value` dropped + recreated, `club_value_leaderboard` replaced,
+  economy formula change) with a fresh pre-push backup; `20260911`
+  data-changing (coin + card escrow trade offers — new `trade_offers` /
+  `trade_offer_cards` tables, `user_cards.held_by_offer_id`, guards threaded
+  through the market/discard/reset RPCs, `wallet_ledger.reason` +
+  `user_notifications.event_type` widened, `activity_feed` gains a `trade`
+  row). `scripts/verify-catalog.ps1` and this catalogue note were not updated
+  at the time; both are brought current in PR #20 below.
+- `20260912000000_tester_feedback_round_2.sql` (**catalogued PR #20; pending
+  the live push**): KUT's tester feedback round 2 (ADR-044), one migration for
+  four defects + three ideas. **Data-changing tier (ADR-032)** solely for a
+  scoped, reversible backfill of existing `bibs_bonus` `kut.user_notifications`
+  bodies ("washing the bibs after" → "bringing the bibs to"); the rest is
+  additive — `create or replace kut.grant_bibs_reward` (same body, one string
+  changed), new `kut.set_own_club_name(text)` self-service RPC writing the
+  dormant `kut.profiles.club_name` column, `create or replace
+  kut.club_value_leaderboard` to `coalesce` that column with the synthesised
+  `"<name>'s Club"` default (no `club_value` / `rank` change), and a new
+  additive `kut.published_sessions` summary view. Fresh encrypted backup
+  immediately before the push; full reverse DDL in the migration header.
+  Pushed from this repo after KUT PR #31 + this catalogue PR merge.
 
 ## Repo status
 

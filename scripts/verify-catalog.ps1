@@ -56,7 +56,8 @@ $expectedSources = @(
   @{ File = "20260909000000_market_listing_card_art.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260909000000_market_listing_card_art.sql" },
   @{ File = "20260910000000_club_value_v2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260910000000_club_value_v2.sql" },
   @{ File = "20260911000000_trade_offers.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260911000000_trade_offers.sql" },
-  @{ File = "20260912000000_tester_feedback_round_2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260912000000_tester_feedback_round_2.sql" }
+  @{ File = "20260912000000_tester_feedback_round_2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260912000000_tester_feedback_round_2.sql" },
+  @{ File = "20260913000000_chronicle_views.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260913000000_chronicle_views.sql" }
 )
 
 foreach ($entry in $expectedSources) {

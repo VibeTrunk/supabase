@@ -163,6 +163,20 @@ application code, and local database tests.
   reverse DDL in the migration header. Pushed from this repo 2026-09-01 after
   KUT PR #31 + catalogue PR #20 merged; `migration list --linked` shows
   `20260912000000` Local = Remote with no drift on the 44 prior migrations.
+- `20260913000000_chronicle_views.sql` (**applied 2026-09-02**): KUT's TFH
+  Chronicle read projections (ADR-049). **Additive tier (ADR-032)** — two
+  computed views and their grants, no data change, no existing object
+  rewritten. `kut.chronicle_weeks` aggregates published `kut.match_sessions` +
+  `kut.attendance` into one row per football week; `kut.chronicle_tier_changes`
+  runs a `lag()` over `kut.player_rating_snapshots` for consecutive weeks where
+  a player's rarity tier differs. Both `security_invoker = true,
+  security_barrier = true` (every underlying select is already permitted to
+  members), `revoke all from public`, `grant select to authenticated,
+  service_role`. Rode the last scheduled backup per the additive tier; reverse
+  DDL is two `drop view`s, in the migration header. Catalogued in PR #22 and
+  pushed from this repo 2026-09-02 after KUT PR #36 merged; `migration list
+  --linked` shows `20260913000000` Local = Remote with no drift on the 45 prior
+  migrations.
 
 ## Repo status
 

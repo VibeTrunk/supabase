@@ -177,11 +177,11 @@ application code, and local database tests.
   pushed from this repo 2026-09-02 after KUT PR #36 merged; `migration list
   --linked` shows `20260913000000` Local = Remote with no drift on the 45 prior
   migrations.
-- `20260914000000_admin_self_wallet_grant.sql` (KUT's ADR-052): a second,
-  superadmin-only coin faucet, `kut.admin_grant_self_wallet(bigint, text,
-  uuid)`, that targets the caller's own wallet (`auth.uid()`) rather than an
-  arbitrary `p_user_id`. `kut.admin_adjust_wallet` (ADR-035) keeps refusing to
-  touch the caller's own wallet for every role, including superadmin — that
+- `20260914000000_admin_self_wallet_grant.sql` (**applied 2026-09-04**): KUT's
+  ADR-052. A second, superadmin-only coin faucet, `kut.admin_grant_self_wallet(bigint,
+  text, uuid)`, that targets the caller's own wallet (`auth.uid()`) rather than
+  an arbitrary `p_user_id`. `kut.admin_adjust_wallet` (ADR-035) keeps refusing
+  to touch the caller's own wallet for every role, including superadmin — that
   guard is untouched; this is a separate function with its own audit tags
   (`wallet_ledger.reason 'admin_self_grant'`, `admin_account_events.action
   'self_wallet_grant'`) so a self-grant is never indistinguishable from an
@@ -192,8 +192,13 @@ application code, and local database tests.
   `create or replace function`, two widened check constraints
   (`admin_account_events.action`, `wallet_ledger.reason`), one new partial
   index; nothing existing is rewritten or dropped, no data migration, so it
-  rides the last scheduled backup. Reverse DDL in the migration header.
-  Catalogued in PR #24 after KUT PR #43 merged.
+  rode the last scheduled backup (2026-09-02). Reverse DDL in the migration
+  header. Catalogued in PR #24 and pushed from this repo 2026-09-04 after KUT
+  PR #43 + catalogue PR #24 merged; `migration list --linked` shows
+  `20260914000000` Local = Remote with no drift on the 46 prior migrations. A
+  hosted `kut` schema dump confirms `kut.admin_grant_self_wallet`, the two
+  widened check constraints, and `admin_account_events_self_grant_idem_idx`
+  all present.
 
 ## Repo status
 

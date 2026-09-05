@@ -199,20 +199,27 @@ application code, and local database tests.
   hosted `kut` schema dump confirms `kut.admin_grant_self_wallet`, the two
   widened check constraints, and `admin_account_events_self_grant_idem_idx`
   all present.
-- `20260915000000_activity_feed_excludes_superadmin.sql` (KUT's ADR-054,
-  KB-009): `create or replace view kut.activity_feed` adds a `role <>
-  'superadmin'` guard on whichever profile(s) generated each row — seller and
-  buyer for a `sale`, seller and proposer for a `trade`, seller for a
-  `listing`, opener for a `pack`. The `session` branch is untouched, since a
-  published session isn't one member's economic activity. Fixes the
-  production superadmin demo/test account's own pack opens, sales, listings
-  and trades showing up in the member-facing club activity feed on Home.
-  **Additive tier (ADR-032)**: one `create or replace view`, same columns, no
-  table, grant, or RLS change on the underlying `market_sales` /
-  `trade_offers` / `market_listings` / `pack_openings` — their ledger and
-  audit history are fully retained, only this read projection is narrower.
-  Reverse DDL (restore the pre-guard view body) is in the migration header.
-  Catalogued in PR #26 after KUT PR #59 merged.
+- `20260915000000_activity_feed_excludes_superadmin.sql` (**applied
+  2026-09-05**): KUT's ADR-054, KB-009. `create or replace view
+  kut.activity_feed` adds a `role <> 'superadmin'` guard on whichever
+  profile(s) generated each row — seller and buyer for a `sale`, seller and
+  proposer for a `trade`, seller for a `listing`, opener for a `pack`. The
+  `session` branch is untouched, since a published session isn't one
+  member's economic activity. Fixes the production superadmin demo/test
+  account's own pack opens, sales, listings and trades showing up in the
+  member-facing club activity feed on Home. **Additive tier (ADR-032)**: one
+  `create or replace view`, same columns, no table, grant, or RLS change on
+  the underlying `market_sales` / `trade_offers` / `market_listings` /
+  `pack_openings` — their ledger and audit history are fully retained, only
+  this read projection is narrower; rode the last scheduled backup, no fresh
+  pre-push backup required. Reverse DDL (restore the pre-guard view body) is
+  in the migration header. Catalogued in PR #26 and pushed from this repo
+  2026-09-05 after KUT PR #59 + catalogue PR #26 merged; `migration list
+  --linked` shows `20260915000000` Local = Remote with no drift on the 47
+  prior migrations. A hosted `kut` schema dump confirms
+  `kut.activity_feed`'s `sale` / `trade` / `listing` / `pack` branches all
+  carry the `role <> 'superadmin'` guard, with both grants to `authenticated`
+  and `service_role` intact.
 
 ## Repo status
 

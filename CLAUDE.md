@@ -221,7 +221,7 @@ application code, and local database tests.
   carry the `role <> 'superadmin'` guard, with both grants to `authenticated`
   and `service_role` intact.
 - `20260922000000_kudos_cap_two_and_award_notice.sql` (**applied
-  2026-09-__ — operator: confirm date on merge**): KUT's ADR-063. Raises the
+  2026-09-07**): KUT's ADR-063. Raises the
   kudos half of rating v2. The qualified-kudos Form ladder becomes
   `0 / 1 / 1.5 / 2` for `0 / 1 / 2 / 3` recognised categories (was
   `0 / 1 / 1.25 / 1.5`); the combined per-session Form input cap rises
@@ -252,13 +252,16 @@ application code, and local database tests.
   check, drops `kudos_awarded` from the event_type check, restores the prior
   `_finalize_one_session` body (`… when 2 then 1.25 else 1.5`, `least(3, …)`,
   no OVR snapshot or notice), and re-scores + replays. Catalogued in PR #29
-  and pushed from this repo after KUT PR #65 + catalogue PR #29 merged.
-  **Operator: on merge, replace this sentence with the confirmation —
-  `migration list --linked` shows `20260922000000` Local = Remote, and a hosted
-  `kut` schema dump confirms `session_report_results_session_input_check` is
-  `0..3.5`, `user_notifications_event_type_check` lists `kudos_awarded`, and
-  `kut._finalize_one_session` carries the `0 / 1 / 1.5 / 2` ladder,
-  `least(3.5, …)` and the `kudos_awarded` insert.**
+  and pushed from this repo 2026-09-07 after KUT PR #65 + catalogue PR #29
+  merged; `migration list --linked` shows `20260922000000` Local = Remote with
+  no drift on the prior migrations. Hosted checks confirm
+  `session_report_results_session_input_check` is
+  `CHECK ((session_input >= 0) AND (session_input <= 3.5))`,
+  `user_notifications_event_type_check` lists `kudos_awarded`, and
+  `pg_get_functiondef('kut._finalize_one_session(uuid)')` carries the
+  `0 / 1 / 1.5 / 2` ladder, `least(3.5, …)` and the `kudos_awarded` insert.
+  `kut.session_report_results` is empty on hosted (no v2 survey finalised yet),
+  so the re-score `update` and the season replay touched zero rows.
 
 ## Repo status
 

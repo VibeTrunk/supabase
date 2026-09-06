@@ -72,7 +72,8 @@ $expectedSources = @(
   @{ File = "20260920060000_wanted_market_listing_visibility.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920060000_wanted_market_listing_visibility.sql" },
   @{ File = "20260920070000_rating_rules_read_permission.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920070000_rating_rules_read_permission.sql" },
   @{ File = "20260920080000_chronicle_open_progress_and_kudos_ladder.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920080000_chronicle_open_progress_and_kudos_ladder.sql" },
-  @{ File = "20260920090000_chronicle_database_deadline.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920090000_chronicle_database_deadline.sql" }
+  @{ File = "20260920090000_chronicle_database_deadline.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920090000_chronicle_database_deadline.sql" },
+  @{ File = "20260922000000_kudos_cap_two_and_award_notice.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260922000000_kudos_cap_two_and_award_notice.sql" }
 )
 
 foreach ($entry in $expectedSources) {

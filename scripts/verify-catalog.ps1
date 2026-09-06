@@ -59,7 +59,20 @@ $expectedSources = @(
   @{ File = "20260912000000_tester_feedback_round_2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260912000000_tester_feedback_round_2.sql" },
   @{ File = "20260913000000_chronicle_views.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260913000000_chronicle_views.sql" },
   @{ File = "20260914000000_admin_self_wallet_grant.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260914000000_admin_self_wallet_grant.sql" },
-  @{ File = "20260915000000_activity_feed_excludes_superadmin.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260915000000_activity_feed_excludes_superadmin.sql" }
+  @{ File = "20260915000000_activity_feed_excludes_superadmin.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260915000000_activity_feed_excludes_superadmin.sql" },  @{ File = "20260916000000_special_edition_scaffolding.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260916000000_special_edition_scaffolding.sql" },
+  @{ File = "20260917000000_duplicate_club_value.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260917000000_duplicate_club_value.sql" },
+  @{ File = "20260918000000_basic_pack_175.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260918000000_basic_pack_175.sql" },
+  @{ File = "20260919000000_wants_trade_availability.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260919000000_wants_trade_availability.sql" },
+  @{ File = "20260920000000_session_reports_rating_v2.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920000000_session_reports_rating_v2.sql" },
+  @{ File = "20260920010000_session_report_hardening.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920010000_session_report_hardening.sql" },
+  @{ File = "20260920020000_club_value_projection_permission.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920020000_club_value_projection_permission.sql" },
+  @{ File = "20260920030000_want_edition_availability_columns.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920030000_want_edition_availability_columns.sql" },
+  @{ File = "20260920040000_report_submit_status.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920040000_report_submit_status.sql" },
+  @{ File = "20260920050000_chronicle_report_results.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920050000_chronicle_report_results.sql" },
+  @{ File = "20260920060000_wanted_market_listing_visibility.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920060000_wanted_market_listing_visibility.sql" },
+  @{ File = "20260920070000_rating_rules_read_permission.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920070000_rating_rules_read_permission.sql" },
+  @{ File = "20260920080000_chronicle_open_progress_and_kudos_ladder.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920080000_chronicle_open_progress_and_kudos_ladder.sql" },
+  @{ File = "20260920090000_chronicle_database_deadline.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920090000_chronicle_database_deadline.sql" }
 )
 
 foreach ($entry in $expectedSources) {

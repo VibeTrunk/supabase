@@ -220,6 +220,48 @@ application code, and local database tests.
   `kut.activity_feed`'s `sale` / `trade` / `listing` / `pack` branches all
   carry the `role <> 'superadmin'` guard, with both grants to `authenticated`
   and `service_role` intact.
+- `20260922000000_kudos_cap_two_and_award_notice.sql` (**applied
+  2026-09-07**): KUT's ADR-063. Raises the
+  kudos half of rating v2. The qualified-kudos Form ladder becomes
+  `0 / 1 / 1.5 / 2` for `0 / 1 / 2 / 3` recognised categories (was
+  `0 / 1 / 1.25 / 1.5`); the combined per-session Form input cap rises
+  `3 → 3.5` (`kut.session_report_results.session_input` `check` dropped by
+  `pg_get_constraintdef` lookup and re-added as
+  `session_report_results_session_input_check` = `0..3.5`); goals still cap at
+  1.5 and the v2 Form ceiling stays 8. `kut.user_notifications.event_type`
+  gains `kudos_awarded` (same drop-by-lookup and re-add of
+  `user_notifications_event_type_check`). `create or replace
+  kut._finalize_one_session` — the new ladder, `least(3.5, goal_form +
+  kudos_form)`, a `jsonb_object_agg` snapshot of every player's
+  `kut.player_season_state.live_ovr` taken *before* `kut._rebuild_season_core`,
+  and one extra insert: for each attendee with
+  `cardinality(qualified_category_ids) > 0`, a `kudos_awarded`
+  `kut.user_notifications` row that never names a nominator and states the
+  player's OVR movement from finalising that session (goals + kudos), or no
+  number when it is `<= 0`. Idempotent on
+  `(user_id, event_type, reference_type, reference_id)` and sent alongside the
+  existing club-wide `session_results` notice, so an admin goal correction that
+  re-finalises neither resends nor restates it. **Data-changing tier
+  (ADR-032)**: a scoped `update kut.session_report_results` re-scores existing
+  derived result rows to the new ladder/cap, then a `do $$` loop replays every
+  affected season through `kut._rebuild_season_core`. Raw reports, ballots,
+  `session_report_rewards`, `wallet_ledger`, transactions and `session_surveys`
+  audit timestamps are untouched; historical finalised sessions emit no
+  `kudos_awarded`. A fresh encrypted `kut`-schema backup was taken immediately
+  before the push. Reverse DDL in the migration header restores the `0..3`
+  check, drops `kudos_awarded` from the event_type check, restores the prior
+  `_finalize_one_session` body (`… when 2 then 1.25 else 1.5`, `least(3, …)`,
+  no OVR snapshot or notice), and re-scores + replays. Catalogued in PR #29
+  and pushed from this repo 2026-09-07 after KUT PR #65 + catalogue PR #29
+  merged; `migration list --linked` shows `20260922000000` Local = Remote with
+  no drift on the prior migrations. Hosted checks confirm
+  `session_report_results_session_input_check` is
+  `CHECK ((session_input >= 0) AND (session_input <= 3.5))`,
+  `user_notifications_event_type_check` lists `kudos_awarded`, and
+  `pg_get_functiondef('kut._finalize_one_session(uuid)')` carries the
+  `0 / 1 / 1.5 / 2` ladder, `least(3.5, …)` and the `kudos_awarded` insert.
+  `kut.session_report_results` is empty on hosted (no v2 survey finalised yet),
+  so the re-score `update` and the season replay touched zero rows.
 
 ## Repo status
 

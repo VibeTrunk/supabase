@@ -73,7 +73,9 @@ $expectedSources = @(
   @{ File = "20260920070000_rating_rules_read_permission.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920070000_rating_rules_read_permission.sql" },
   @{ File = "20260920080000_chronicle_open_progress_and_kudos_ladder.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920080000_chronicle_open_progress_and_kudos_ladder.sql" },
   @{ File = "20260920090000_chronicle_database_deadline.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260920090000_chronicle_database_deadline.sql" },
-  @{ File = "20260922000000_kudos_cap_two_and_award_notice.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260922000000_kudos_cap_two_and_award_notice.sql" }
+  @{ File = "20260922000000_kudos_cap_two_and_award_notice.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260922000000_kudos_cap_two_and_award_notice.sql" },
+  @{ File = "20260923000000_chronicle_results_visibility.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260923000000_chronicle_results_visibility.sql" },
+  @{ File = "20260924000000_admin_finalize_session_survey.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20260924000000_admin_finalize_session_survey.sql" }
 )
 
 foreach ($entry in $expectedSources) {

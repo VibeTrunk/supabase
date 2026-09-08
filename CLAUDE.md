@@ -325,6 +325,41 @@ application code, and local database tests.
   `kut.admin_finalize_session_survey` exists, and
   `select count(*) from kut.session_surveys where finalized_by is not null`
   returns 0.
+- `20260925000000_kudos_award_notice_detail.sql` (**applied 2026-09-08**):
+  KUT's ADR-069. Text-only follow-up to `20260922000000`'s `kudos_awarded`
+  notice, which read "Teammates recognized you with kudos this session. Your
+  card rating rose +N OVR this week." — it named none of the categories the
+  player was actually recognised in, and implied the whole week's movement came
+  from kudos. New immutable `kut._join_names(text[])` renders a name list as
+  `A`, `A and B` or `A, B and C` (`revoke all from public, anon`; execute to
+  `service_role` only — it is called from inside a `security definer` function,
+  never by the browser). `create or replace kut._finalize_one_session` — same
+  scoring, same `kut._rebuild_season_core`, same pre-rebuild `live_ovr`
+  snapshot, same `session_results` notice, same idempotency key. Only the
+  `kudos_awarded` body changes: it now names every recognised category ordered
+  by `array_position(v_survey.category_ids, c.id)` — ballot order, so the notice
+  lists them the way the member saw them, not `category_id` order — and
+  attributes the movement to this session's goals *and* kudos, naming the goal
+  count from `session_report_results.effective_goals` when it is `> 0` ("Your 2
+  goals and these kudos lifted your card rating +3 OVR this week", "Your 1
+  goal…") and claiming no goals when it is not ("These kudos lifted…"). A
+  movement of `<= 0` still yields no rating sentence, and the notice still names
+  no nominator. Attributing the finalisation delta to goals + kudos is accurate:
+  appearances were already counted when the session was published, so the report
+  results are the only new input at finalisation. **Additive tier (ADR-032)**:
+  one new function plus one `create or replace`; no table, constraint, grant,
+  scoring rule or rating-maths change, and no DML. Notices already written keep
+  the ADR-063 wording — re-finalising hits the existing `on conflict
+  (user_id, event_type, reference_type, reference_id) do nothing` — so the club
+  sees a mix until the next session finalises, which was preferred over
+  rewriting notices members had already read. Relied on the most recent
+  scheduled backup (`20260908-215210`) rather than a fresh one, per the additive
+  tier. Reverse DDL in the migration header: drop `kut._join_names(text[])`,
+  then re-run the `create or replace function kut._finalize_one_session` block
+  from `20260922000000_kudos_cap_two_and_award_notice.sql`. Catalogued and
+  pushed from this repo 2026-09-08. `migration list --linked` shows
+  `20260925000000` Local = Remote with no drift across the ledger, and the
+  catalogue check reports 65 approved source migrations.
 
 ## Repo status
 

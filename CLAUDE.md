@@ -263,6 +263,69 @@ application code, and local database tests.
   `kut.session_report_results` is empty on hosted (no v2 survey finalised yet),
   so the re-score `update` and the season replay touched zero rows.
 
+- `20260923000000_chronicle_results_visibility.sql` (**applied 2026-09-08**):
+  KUT's ADR-066, additive. Fixes a live read blackout: the Chronicle's
+  finalized per-player results were readable only by that session's attendees
+  and admins, so every member who missed the session saw "Results finalized. No
+  report results were recorded." while an admin on the same URL saw the full
+  table. `kut.chronicle_session_reports` ran with `security_invoker=true` and
+  inner-joins `kut.session_surveys`, whose `"eligible members read surveys"`
+  policy admits only `kut.is_admin()` or a member holding a
+  `kut.session_survey_eligibility` row. The `"members read finalized results"`
+  policy on `kut.session_report_results` failed identically, because Postgres
+  applies a referenced table's RLS inside a policy expression, so its `exists()`
+  over `session_surveys` was blind too. `create or replace view` flips the
+  projection to `security_invoker=false`, matching its sibling
+  `kut.chronicle_session_report_status` (`20260920090000`), and the policy is
+  dropped and recreated over a new `security definer`
+  `kut.is_survey_finalized(uuid)` (`revoke` from `public`/`anon`, `grant` to
+  `authenticated`/`service_role`). Side effect: `submitted_reports`,
+  `eligible_accounts` and `attendee_count` — sub-selects over RLS-scoped tables
+  that made an attendee compute "1 of 1 reports submitted" — now report
+  club-wide counts. **Additive tier (ADR-032)**: no `update`, no backfill, no
+  season replay; the 7 September survey was already finalized, so this changed
+  what members may read, not any stored result. No new disclosure —
+  `effective_goals` is already club-wide as
+  `chronicle_session_report_status.goal_total`, `recognized_categories` lists
+  only categories two or more nominators agreed on, and `goal_form` /
+  `kudos_form` / `session_input` are pure functions of those two under ADR-063.
+  The join on `status='finalized'` is now the only guard keeping an open session
+  out of the projection. Reverse DDL in the migration header restores the
+  invoker view and the inline-`exists()` policy and drops the function, which
+  reinstates the blackout. Catalogued in PR #31 and pushed from this repo
+  2026-09-08 after KUT PR #69 + #70 and catalogue PR #31 merged. Hosted checks
+  confirm `chronicle_session_reports` reports `security_invoker` = `false` and
+  `kut.is_survey_finalized` exists.
+- `20260924000000_admin_finalize_session_survey.sql` (**applied 2026-09-08**):
+  KUT's ADR-067, additive. Lets an admin close a session's report window before
+  its 24 hours elapse instead of waiting for the deadline and the ADR-061 lazy
+  fallback. `kut.session_surveys` gains nullable `finalized_by` (references
+  `kut.profiles(id) on delete restrict`) and `finalized_reason` (`check` 3–500
+  chars when present); `kut.admin_finalize_session_survey(uuid, text)` is a
+  `security definer` front door to the existing `kut._finalize_one_session`, so
+  scoring, `kut._rebuild_season_core` and the `session_results` /
+  `kudos_awarded` notifications are unchanged — only the timing moves. Gated on
+  `kut.is_admin()`, requires a 3–500 character reason, refuses a cancelled
+  survey, returns `already_finalized` rather than raising on a second press, and
+  returns the attendee / eligible / submitted counts plus whether the
+  three-ballot kudos quorum was met. `closes_at` is deliberately not moved: the
+  table's `check (closes_at = opened_at + interval '24 hours')` would force
+  rewriting `opened_at` and erase when the window opened, so the published
+  deadline stands and an early close reads as `finalized_at < closes_at`. Both
+  audit columns stay null on the automatic path and on the re-finalization
+  `kut.admin_correct_session_goals` triggers, so null means "closed at its
+  deadline". Nothing downstream needed changing — every consumer already keys
+  off `session_surveys.status`. **Additive tier (ADR-032)**: no data change;
+  every existing survey row takes `finalized_by = null`. A member who had not
+  submitted when an admin closes the window loses the window and the 50-coin
+  completion reward; rewards already earned are untouched. Reverse DDL in the
+  migration header drops the function and both columns. Catalogued in PR #31 and
+  pushed from this repo 2026-09-08 in the same `db push` as
+  `20260923000000`. Hosted checks confirm both columns exist and are nullable,
+  `kut.admin_finalize_session_survey` exists, and
+  `select count(*) from kut.session_surveys where finalized_by is not null`
+  returns 0.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

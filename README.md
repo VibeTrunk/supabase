@@ -20,9 +20,13 @@ mistaking another tool's already-applied migration for missing local work.
 
 The shared ledger contains Cogitster's deployed
 `202608160001_cogitster_solo.sql` baseline and KUT's applied migrations through
-`20260925000000_kudos_award_notice_detail.sql`. Cogitster's
+`20260926000000_trade_log_rating_story_listing_duration.sql`. Cogitster's
 pending `202608160002_lock_down_trigger_execute.sql` is intentionally absent
 until its own release is approved.
+
+The per-migration notes below stop at 2026-08-31 and have not been kept up
+since; `CLAUDE.md` is the maintained record and carries every migration through
+the one named above. Read the list here as history, not as a complete ledger.
 
 - `20260818000000_initial_tfh_roster_and_august_sessions.sql` (applied
   2026-08-18): the first real TFH roster/attendance data, and the reweighted

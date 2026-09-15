@@ -360,8 +360,8 @@ application code, and local database tests.
   pushed from this repo 2026-09-08. `migration list --linked` shows
   `20260925000000` Local = Remote with no drift across the ledger, and the
   catalogue check reports 65 approved source migrations.
-- `20260926000000_trade_log_rating_story_listing_duration.sql` (**catalogued
-  2026-09-16, not yet applied**): KUT's ADR-072 + ADR-073 + ADR-074, shipped in
+- `20260926000000_trade_log_rating_story_listing_duration.sql` (**applied
+  2026-09-16**): KUT's ADR-072 + ADR-073 + ADR-074, shipped in
   one file. **Three features in one migration is deliberate and exceptional** —
   KUT's own convention is one migration-bearing feature per PR, and its
   `migrations` CI job enforces at most one added migration file per change. The
@@ -462,6 +462,24 @@ application code, and local database tests.
   - Merged as KUT PR #86 (`aa1f254`); KUT CI green on `migrations`, `database`,
     `e2e`, `fast`, `merge-gate`, `security` and `scan`. Catalogue check reports
     66 approved source migrations.
+  - Catalogued via PR #34 and pushed from this repo 2026-09-16, on a fresh
+    cold-verified backup (`20260916-005721`) taken minutes before rather than
+    the scheduled one the additive tier would have allowed. Smoke-tested on
+    hosted immediately after: a card lists for 72 hours and shows its real
+    expiry date, the club activity feed returns rows again, and a Live card
+    renders its rating buildup.
+  - **Ordering note for the future.** KUT's Vercel production deploy fires on
+    merge to its `main`, so merging PR #86 shipped application code that
+    expected this schema **before** the schema existed. For roughly two hours
+    creating a market listing failed on hosted — `create_listing` was called
+    with `p_duration_hours` against the old two-argument signature — and the
+    club activity feed rendered empty, because selecting the not-yet-existing
+    `offered_card_names` errored and that widget is deliberately non-critical.
+    Nothing crashed and no data was at risk, but the lesson generalises: when a
+    tool's app deploy is coupled to its own merge, the catalogue push should be
+    ready to follow immediately, or the app change should tolerate the old
+    schema. Worth considering a feature flag or a tolerant read for the next
+    migration whose code cannot degrade as gracefully as this one did.
 
 ## Repo status
 

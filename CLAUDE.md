@@ -360,6 +360,108 @@ application code, and local database tests.
   pushed from this repo 2026-09-08. `migration list --linked` shows
   `20260925000000` Local = Remote with no drift across the ledger, and the
   catalogue check reports 65 approved source migrations.
+- `20260926000000_trade_log_rating_story_listing_duration.sql` (**catalogued
+  2026-09-16, not yet applied**): KUT's ADR-072 + ADR-073 + ADR-074, shipped in
+  one file. **Three features in one migration is deliberate and exceptional** —
+  KUT's own convention is one migration-bearing feature per PR, and its
+  `migrations` CI job enforces at most one added migration file per change. The
+  owner instructed the batch on 2026-09-16 so the hosted schema is pushed once
+  rather than three times; KUT's ADR-075 records the reasoning, that the
+  file-count invariant is satisfied honestly rather than circumvented, and that
+  it sets no precedent. Each section is an independently reviewable slice with
+  its own ADR, its own database test file and its own reverse DDL, and the three
+  touch disjoint objects, so no section can mask a defect in another. Postgres
+  DDL being transactional, a failure anywhere rolls the whole file back — which
+  is why one push is safer here than three sequential ones, not merely quicker.
+  **Zero DML**: no `insert`, `update` or `delete` against member data anywhere
+  in the file, no table created or altered, no backfill, and no economy or
+  rating formula changed. Every input the three features read already existed
+  and was simply never projected.
+  - **Section 1 (ADR-072)** — a seller chooses a 24- or 72-hour listing.
+    `kut.market_listings.expires_at` has carried
+    `default (now() + interval '24 hours')` since `20260816070600`, and expiry
+    has always been enforced lazily by the `expires_at > now()` predicates in
+    the table's RLS policy, `kut.active_market_listings`,
+    `kut.my_collection_cards`, `kut.activity_feed`, `kut.buy_listing`,
+    `kut.propose_trade` and `kut.prevent_burning_listed_card`, plus the
+    opportunistic self-heal in `create_listing`/`buy_listing`. None of that
+    moves; only the value written at insert time does, and the column default
+    stays 24h. `drop function if exists kut.create_listing(uuid, bigint)` comes
+    **first and is load-bearing**: a defaulted third parameter creates an
+    *overload*, not a replacement, which would have left the two-argument entry
+    point alive and permanently 24-hour. The new parameter defaults to 24, so
+    existing two-argument callers stay valid. Body rebased on the current
+    `20260911000000_trade_offers.sql` definition so the ADR-042
+    `held_by_offer_id` escrow guard survives. Duration is an allow-list
+    (`not in (24, 72)`, with `null` checked explicitly), dual-declared with
+    `ECONOMY.listingDurationChoiceHours` in the KUT repo. The insert now names
+    `expires_at` and uses `returning` instead of the previous hardcoded
+    `now() + interval '24 hours'` in the return payload, which was never read
+    back from the row.
+  - **Section 2 (ADR-073)** — `create or replace view kut.activity_feed` so an
+    accepted trade reports its whole consideration. Two fixes. The trade branch
+    reported `trade_offers.coins_to_seller` while every other branch reports
+    gross (`market_sales.sale_price`, `market_listings.price`,
+    `pack_openings.price_paid`); it now reports `trade_offers.offered_coins`, so
+    `amount` means the same thing in all five branches. **Existing trades will
+    therefore display ~5% higher after this is applied** — no row is rewritten,
+    `coins_to_seller` and `coins_burned` are untouched, and the seller still
+    sees the real post-burn receipt on `/market/offers`; the feed simply reports
+    the price rather than the proceeds. Second, `kut.trade_offer_cards` was
+    never joined, so cards moving the other way were invisible; a `left join
+    lateral` `array_agg` now supplies them in a new **ninth column**
+    `offered_card_names text[]`, appended last because `create or replace view`
+    can only append (the same constraint `20260909000000` met) — all five
+    branches carry it, four as `null::text[]`. `left join`, not `cross join`, so
+    a coins-only trade still yields a row with `null` rather than an empty
+    array. Stays `security_invoker = false`, so the new join raises no RLS
+    question; both `role <> 'superadmin'` guards (ADR-054 / KB-009) are
+    unchanged, and the branch still does not reference `kut.market_sales`, so
+    KUT Part L invariant #23 holds.
+  - **Section 3 (ADR-074)** — two new read projections behind a "why this
+    rating" story: `kut.player_rating_breakdown` and
+    `kut.player_form_contributions`, both
+    `security_invoker = true, security_barrier = true`,
+    `revoke all from public`, `grant select to authenticated, service_role`.
+    Invoker rights are deliberate and the opposite of section 2: they make the
+    caller's own RLS apply, so `kut.session_report_results` stays gated to
+    finalized surveys by `kut.is_survey_finalized` (ADR-066). Definer views
+    would have bypassed that gate and exposed unfinalized results. The OVR split
+    is *derived, not recomputed*: `form_bonus` is `floor(form_score + 0.5)`, the
+    engine's own final rounding, and `attendance_base` is `live_ovr` minus that,
+    so the halves reconstruct the stored `live_ovr` by construction rather than
+    risking an off-by-one against a re-evaluated
+    `30 + 45*(activity/100)^0.8`; `is_ovr_capped` flags the 83 clamp.
+    `player_form_contributions` mirrors the session-age decay ladder
+    (1 / .75 / .5 / .25 / 0) and the `(session_date, session_type, id)` tuple
+    ordering from `kut._rebuild_season_core`. **That duplication is the one
+    maintenance hazard in this file** — change the ladder in the engine without
+    changing the view and the view lies silently — and it is pinned by
+    `rating_breakdown.test.sql`, which runs the real `_rebuild_season_core` over
+    a fixture and asserts the summed `weighted_contribution` equals the
+    resulting `player_season_state.form_score`. Neither view may join
+    `kut.session_kudos` (nominator identity) or `kut.session_surveys` (whose
+    attendee-only policy caused the KB-013 blackout); a test asserts this via
+    `information_schema.view_table_usage` rather than trusting review.
+  - **Additive tier (ADR-032)**: relies on the most recent scheduled backup
+    rather than a fresh pre-push one; no restore drill. Reverse DDL is in the
+    migration header, per section: drop
+    `kut.create_listing(uuid, bigint, integer)` and recreate the two-argument
+    version from `20260911000000_trade_offers.sql`; re-run the view body from
+    `20260915000000_activity_feed_excludes_superadmin.sql`; and drop both new
+    views, which nothing else references. Section 2's rollback restores the
+    eight-column shape, so application code selecting `offered_card_names` must
+    be reverted with it.
+  - **Sequencing note.** KUT's KB-017 (2026-09-16 Supabase Security Advisor
+    review) names `kut.activity_feed` among the definer projections that grant
+    `SELECT` to `authenticated` without proving an active KUT profile. This
+    migration neither causes nor worsens that finding — the view already had
+    those properties — but whoever fixes KB-017 **must rebase on this version of
+    the view**, or they will silently revert the gross-coins fix and drop the
+    ninth column.
+  - Merged as KUT PR #86 (`aa1f254`); KUT CI green on `migrations`, `database`,
+    `e2e`, `fast`, `merge-gate`, `security` and `scan`. Catalogue check reports
+    66 approved source migrations.
 
 ## Repo status
 

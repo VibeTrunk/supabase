@@ -481,6 +481,59 @@ application code, and local database tests.
     schema. Worth considering a feature flag or a tolerant read for the next
     migration whose code cannot degrade as gracefully as this one did.
 
+- `20260928000000_active_member_projection_gate.sql` (**catalogued, not yet
+  applied**): KUT's ADR-079, closing KB-017 — a Supabase Security Advisor
+  finding. Ten `security_invoker = false` views in the `kut` schema grant
+  `SELECT` to this project's shared `authenticated` role and deliberately
+  bypass their source tables' RLS, but none proved the caller is a KUT member.
+  **This is the cross-tool boundary that matters for a shared project**: a JWT
+  issued by another VibeTrunk tool is `authenticated` here too, so it could
+  read member-only names, market and activity data, Club Values, ratings and
+  Chronicle results through the Data API, as could a disabled KUT account with
+  a still-valid session. A bounded read disclosure — these are read
+  projections and `anon` has no `SELECT` on any of them.
+  **DDL**: one new `kut.is_active_member()` (`sql`, `stable`,
+  `security definer`, `search_path = kut, pg_catalog`, execute revoked from
+  `public`/`anon` and granted to `authenticated`/`service_role`) plus ten
+  `create or replace view`. `security definer` is required because
+  `kut.profiles` RLS lets a member read only their own row, so invoker rights
+  could never prove a *foreign* caller has no profile.
+  **Zero DML**: no table created, altered or written, no backfill, no grant
+  change — the grants in the file re-assert what each source migration already
+  granted.
+  **Nothing is flipped to `security_invoker = true`.** That is the Advisor's
+  generic remedy and it is wrong for these views: they are cross-RLS club
+  projections by design, and doing it to `kut.chronicle_session_reports` is
+  precisely KUT's KB-013, the live Chronicle blackout of 2026-09-08.
+  **Shape**: each view body is copied byte-identically from its source
+  migration and wrapped as
+  `select * from ( <body> ) gated where kut.is_active_member()`. The risk in
+  this migration is transcription across ten bodies and six source files, not
+  semantics, and the wrapper also makes it structurally impossible for
+  `create or replace view` to change a column's name, order or type, since
+  `select *` is expanded from an unchanged body. `EXPLAIN` shows
+  `One-Time Filter: kut.is_active_member()`, so a denied caller never executes
+  the body.
+  `kut.public_live_ratings` additionally gains the explicit
+  `security_invoker = false` it previously only inherited as the default.
+  **Tier: additive, projection-only.** Rides the most recent scheduled backup.
+  Must be its own push, separate from the data-changing `20260927000000`.
+  **Reverse DDL** in the migration header: re-emit the ten bodies without the
+  wrapper as `create or replace view` — never `drop view`, because
+  `kut.my_club_value` depends on `kut.my_club_value_editions` — then
+  `drop function kut.is_active_member();`. Grants are unchanged, so none need
+  re-granting.
+  **Operator note**: `kut.is_active_member()` is false for a bare psql session
+  with no JWT and no `SET ROLE`. An ad-hoc query against any of these ten views
+  from this repository's tooling needs `set role service_role;` first, or it
+  will read zero rows and look like data loss when there is none.
+  Verified in the KUT repository: 71 pgTAP assertions in
+  `supabase/tests/database/member_only_projections.test.sql` covering `anon`, a
+  profileless JWT, a disabled member, an active participant, an active
+  bystander and `service_role` across all ten views. Run against the ungated
+  views as a negative control it fails 15 of them, matching KB-017's own
+  accounting exactly.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

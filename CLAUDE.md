@@ -554,8 +554,8 @@ application code, and local database tests.
   invariant still counts zero reports left at `draft` while holding a completion
   reward. The end-to-end check &mdash; submit, then confirm the RPC refuses a
   draft &mdash; waits for the next published session, since no survey was open.
-- `20260928000000_active_member_projection_gate.sql` (**catalogued, not yet
-  applied**): KUT's ADR-079, merged in KUT PR #92 (`84de167`), closing KB-017 — a Supabase Security Advisor
+- `20260928000000_active_member_projection_gate.sql` (**applied 2026-09-22**):
+  KUT's ADR-079, merged in KUT PR #92 (`84de167`), closing KB-017 — a Supabase Security Advisor
   finding. Ten `security_invoker = false` views in the `kut` schema grant
   `SELECT` to this project's shared `authenticated` role and deliberately
   bypass their source tables' RLS, but none proved the caller is a KUT member.
@@ -606,6 +606,21 @@ application code, and local database tests.
   bystander and `service_role` across all ten views. Run against the ungated
   views as a negative control it fails 15 of them, matching KB-017's own
   accounting exactly.
+  **Pushed 2026-09-22**, second of two separate pushes that evening and the
+  additive one, so it rode the backup taken for `20260927000000`
+  (`20260922-204443`) rather than a fresh one. Afterwards
+  `migration list --linked` shows 68 entries with none pending and no
+  remote-only drift, both `20260927000000` and `20260928000000` Local =
+  Remote, and the catalogue check reports 68 approved source migrations.
+  **Smoke-tested from the app as an ordinary member, which is the only test
+  that matters here**: this migration's failure mode is not an error but an
+  empty screen, exactly how KB-013 blacked out the Chronicle. Home (activity
+  feed, Club Value, leaderboard), `/market`, `/leaderboard`, `/club/value`,
+  `/market/offers` and a finalized Chronicle issue all rendered populated.
+  Direct reads under `set role service_role` returned 21 rows from
+  `kut.activity_feed` and 66 from `kut.chronicle_session_reports`, the latter
+  consistent with three finalized surveys across the roster &mdash; so the
+  cross-RLS projection the KB-013 fix restored is still whole.
 
 ## Repo status
 

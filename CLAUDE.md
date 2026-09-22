@@ -621,6 +621,46 @@ application code, and local database tests.
   `kut.activity_feed` and 66 from `kut.chronicle_session_reports`, the latter
   consistent with three finalized surveys across the roster &mdash; so the
   cross-RLS projection the KB-013 fix restored is still whole.
+- `20260929000000_season_rating_rules_rls.sql` (**catalogued, not yet
+  applied**): KUT's ADR-081, merged in KUT PR #98 (`25274ce`). This is the last
+  open item from the 2026-09-16 Supabase Security Advisor review.
+  `kut.season_rating_rules` (one row per season, its rating-v2 cutover week) was
+  the only table in the `kut` schema with RLS disabled. It was not a write or
+  integrity hole: `20260920070000` already grants only `SELECT`, to
+  `authenticated` and `service_role`, and nothing to `anon`. But on this shared
+  project a JWT issued by another VibeTrunk tool, or a disabled KUT account with
+  a still-valid session, could read the cutover dates. That is the same
+  cross-tool boundary as `20260928000000`, drawn with the same predicate.
+  **DDL**: `alter table … enable row level security` plus one policy,
+  `"active members read rating rules"`: `for select to authenticated using
+  (kut.is_active_member())`. There is no write policy and no grant change, so
+  writes stay refused by the missing grant with `42501`. The policy filters
+  rather than raises. KUT's `/admin/attendance`, the one app reader, runs as an
+  authenticated admin and passes it, and the service role has `BYPASSRLS`.
+  **Zero DML.**
+  **No `FORCE`.** The three `security definer` readers and writers are
+  `kut._rebuild_season_core`, the `match_sessions_rating_version` trigger and
+  the `seasons_initialize_rating_rules` trigger. They are owned by the table's
+  owner and keep working through the owner bypass. Measured locally, `FORCE`
+  would not break them either, because `postgres` carries `BYPASSRLS`. It is
+  left off because it buys nothing and would rest those paths on a platform role
+  attribute instead of on ownership.
+  **Tier: additive, access-only.** Rides the most recent scheduled backup.
+  **Reverse DDL** in the migration header:
+  `drop policy "active members read rating rules" on kut.season_rating_rules;
+  alter table kut.season_rating_rules disable row level security;`. Grants are
+  unchanged, so none need re-granting.
+  Verified in the KUT repository: 27 pgTAP assertions in
+  `supabase/tests/database/season_rating_rules_rls.test.sql`, covering `anon`, a
+  profileless JWT, a disabled member, an active member, an admin, the service
+  role, member writes, the three definer paths, and "no `kut` table has RLS
+  disabled". Against the unmigrated schema, 7 of them fail as a negative
+  control. After the migration the full KUT suite passes: 20 files, 630
+  assertions.
+  **Hosted smoke test after the push**: as an admin, `/admin/attendance` still
+  explains the reporting cutover, and the next session still publishes and
+  finalizes normally. The failure mode to watch for is silent: a denied read
+  returns zero rows, not an error.
 
 ## Repo status
 

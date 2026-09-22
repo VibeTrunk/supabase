@@ -481,8 +481,8 @@ application code, and local database tests.
     schema. Worth considering a feature flag or a tolerant read for the next
     migration whose code cannot degrade as gracefully as this one did.
 
-- `20260927000000_session_report_status_is_monotonic.sql` (**catalogued, not
-  yet applied**): KUT's ADR-078, fixing KB-020. Merged in KUT PR #91
+- `20260927000000_session_report_status_is_monotonic.sql` (**applied
+  2026-09-22**): KUT's ADR-078, fixing KB-020. Merged in KUT PR #91
   (`9f43c41`). A member who had already
   submitted a session report could press "Save draft" and silently move their
   own report back to `draft`, while `kut.session_report_rewards` — written once
@@ -530,6 +530,25 @@ application code, and local database tests.
   function body as a negative control where five of them fail — including the
   standing invariant that no report is left as a draft while holding a
   completion reward.
+  **Pushed 2026-09-22** on a fresh cold-verified backup, `20260922-204443`
+  (plaintext SHA-256 `176C33C3E4DCEBB2FDFFF9D67FAEA60E0528722BCF7B6C45A296FDAC295240F6`,
+  cold verification passed in a separate process at 18:45:13Z). The data-changing
+  tier earned that fresh backup even though the DML turned out to be a no-op --
+  see below -- because the tier follows what the file *can* do, not what it
+  happens to do on the day.
+  **The backfill matched zero rows.** Both reconnaissance queries run against
+  hosted before the push returned nothing: no `session_reports` row sat at
+  `status='draft'` beside a `session_report_rewards` row, and no survey was
+  open. The originally reported "Draft - Reward paid" row had evidently been
+  re-submitted in the meantime, which restores the status and leaves the reward
+  alone. So on hosted this migration is **preventive, not corrective**: it closed
+  the path rather than repairing damage, and no already-finalized session needed
+  the replay that was deliberately declined. The join in the reconnaissance query
+  could not have hidden a row -- `session_reports.session_id` and `player_id` are
+  both `not null` with `on delete restrict` foreign keys.
+  After the push, `migration list --linked` shows 67 entries with none pending and
+  no remote-only drift, `20260927000000` Local = Remote, and the catalogue check
+  reports 67 approved source migrations.
 
 ## Repo status
 

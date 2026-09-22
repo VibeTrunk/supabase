@@ -481,6 +481,55 @@ application code, and local database tests.
     schema. Worth considering a feature flag or a tolerant read for the next
     migration whose code cannot degrade as gracefully as this one did.
 
+- `20260927000000_session_report_status_is_monotonic.sql` (**catalogued, not
+  yet applied**): KUT's ADR-078, fixing KB-020. Merged in KUT PR #91
+  (`9f43c41`). A member who had already
+  submitted a session report could press "Save draft" and silently move their
+  own report back to `draft`, while `kut.session_report_rewards` — written once
+  on the original submit and never deleted — kept the 50-coin reward. The admin
+  roster joins the two independently and displayed exactly that: "Draft ·
+  Reward paid".
+  **Not cosmetic.** `kut._finalize_one_session` scores only `status='submitted'`
+  rows and uses the same filter for the `v_turnout>=3` gate that decides whether
+  any kudos are recognised in a session, so a report left in this state at
+  finalization drops that member's goals and kudos and can wipe kudos
+  recognition for everyone present — while their `kut.session_kudos` rows still
+  count toward recipients' two-nominator threshold.
+  **DDL**: one `create or replace function kut.submit_session_report`. The body
+  is the `20260920000000` original with one new local, `v_intent`, derived from
+  the stored row before any validation runs, plus its five uses. No table
+  created or altered, no constraint, grant or trigger changed, no economy or
+  rating formula touched. A guard inside the `on conflict do update` was
+  rejected: it would hold the status while letting the row be rewritten under
+  the weaker draft validation, leaving a submitted report with a null goal
+  count or an incomplete ballot.
+  **DML, and this is the data-changing part**: one scoped `update` repairing
+  rows where `status='draft'` sits beside a `kut.session_report_rewards` row.
+  That combination is reachable by no other path — a reward row is written only
+  by a real submit and is never deleted — so the predicate is exact.
+  `submitted_at` is recovered from `updated_at`, the closest surviving evidence.
+  **Deliberately not replayed**: sessions already finalized with a regressed
+  report are *not* re-scored, although `kut._finalize_one_session` is
+  re-runnable and `kut.admin_correct_session_goals` calls it exactly that way.
+  Owner decision, 2026-09-22: replaying would move live OVR for real members
+  retroactively, push `finalized_at` forward and disturb the ADR-067 reading of
+  `finalized_at < closes_at` as "closed early". The consequence is that for an
+  already-finalized session those goals and kudos stay out of that week's
+  scoring. A later `admin_correct_session_goals` on such a session re-scores it
+  correctly.
+  **Tier: data-changing.** Needs a fresh cold-verified backup before the push,
+  not the scheduled one — the same treatment ADR-063 had.
+  **Reverse DDL** in the migration header: re-emit the pre-KB-020 body of
+  `kut.submit_session_report` verbatim from
+  `20260920000000_session_reports_rating_v2.sql:242-308` as
+  `create or replace function`. The backfill is **not** reversible: nothing
+  records which rows were draft beforehand, so a repaired row cannot afterwards
+  be told apart from one submitted normally.
+  Verified in the KUT repository: 16 pgTAP assertions in
+  `supabase/tests/database/session_report_status.test.sql`, run against the old
+  function body as a negative control where five of them fail — including the
+  standing invariant that no report is left as a draft while holding a
+  completion reward.
 - `20260928000000_active_member_projection_gate.sql` (**catalogued, not yet
   applied**): KUT's ADR-079, merged in KUT PR #92 (`84de167`), closing KB-017 — a Supabase Security Advisor
   finding. Ten `security_invoker = false` views in the `kut` schema grant

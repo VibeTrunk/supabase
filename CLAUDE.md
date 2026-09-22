@@ -621,8 +621,8 @@ application code, and local database tests.
   `kut.activity_feed` and 66 from `kut.chronicle_session_reports`, the latter
   consistent with three finalized surveys across the roster &mdash; so the
   cross-RLS projection the KB-013 fix restored is still whole.
-- `20260929000000_season_rating_rules_rls.sql` (**catalogued, not yet
-  applied**): KUT's ADR-081, merged in KUT PR #98 (`25274ce`). This is the last
+- `20260929000000_season_rating_rules_rls.sql` (**applied 2026-09-23**):
+  KUT's ADR-081, merged in KUT PR #98 (`25274ce`). This is the last
   open item from the 2026-09-16 Supabase Security Advisor review.
   `kut.season_rating_rules` (one row per season, its rating-v2 cutover week) was
   the only table in the `kut` schema with RLS disabled. It was not a write or
@@ -661,6 +661,24 @@ application code, and local database tests.
   explains the reporting cutover, and the next session still publishes and
   finalizes normally. The failure mode to watch for is silent: a denied read
   returns zero rows, not an error.
+  **Pushed 2026-09-23** from this repository, on its own `db push`, after
+  catalogue PR #40 merged and this checkout was pulled to `c585c14`. Additive,
+  so it rode the latest scheduled backup, `20260922-214356`, cold-verified.
+  Before the push, `migration list --linked` showed 68 entries with
+  `20260929000000` the only local-only one and no remote-only drift, the dry run
+  named exactly that file, and the catalogue check reported 69 approved source
+  migrations. Afterwards `migration list --linked` shows 69 entries, all present
+  locally and remotely, with `20260929000000` on both sides.
+  **Smoke-tested on hosted.** In the SQL editor: `relrowsecurity = true`,
+  `relforcerowsecurity = false`, the one policy exactly as written, and grants
+  unchanged (`SELECT` for `authenticated` and `service_role`, nothing for
+  `anon`). The schema-wide check returned no `kut` table without RLS. In the
+  app, a superadmin on `/admin/attendance` still sees "This date uses member
+  reports" for a post-cutover date. The page falls back to the admin-goals
+  wording when the cutover is missing, so that is proof the admin read the row
+  through the new policy, not merely the absence of an error. The remaining
+  check, that the next session publishes and finalizes normally, waits for a
+  real session.
 
 ## Repo status
 

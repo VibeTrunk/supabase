@@ -482,7 +482,8 @@ application code, and local database tests.
     migration whose code cannot degrade as gracefully as this one did.
 
 - `20260927000000_session_report_status_is_monotonic.sql` (**catalogued, not
-  yet applied**): KUT's ADR-078, fixing KB-020. A member who had already
+  yet applied**): KUT's ADR-078, fixing KB-020. Merged in KUT PR #91
+  (`9f43c41`). A member who had already
   submitted a session report could press "Save draft" and silently move their
   own report back to `draft`, while `kut.session_report_rewards` — written once
   on the original submit and never deleted — kept the 50-coin reward. The admin

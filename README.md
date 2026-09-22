@@ -8,9 +8,18 @@ Central migration catalogue for the single shared VibeTrunk Supabase project.
 2. Copy the immutable migration, unchanged, into this repository.
 3. Run `powershell -ExecutionPolicy Bypass -File scripts/verify-catalog.ps1`.
 4. Commit and review both repositories together.
-5. From this repository only, create a verified encrypted backup, run
+5. **`git pull` this repository before deploying.** `db push` reads the
+   migration files from the local working copy, not from GitHub, so a merged
+   catalogue PR that has not been pulled is invisible to it. The CLI then
+   reports "Remote database is up to date" and applies nothing. It fails safe —
+   a stale checkout under-applies rather than pushing something unexpected —
+   but it looks like a broken migration, and it has already cost one deploy
+   session (2026-09-22, `20260928000000`).
+6. From this repository only, create a verified encrypted backup, run
    `npx supabase migration list --linked`, then `npx supabase db push --dry-run`.
-6. Apply with `npx supabase db push` only after explicit operator approval.
+   Check the dry run names the migration you expect; if `migration list` does
+   not show it as local-only, go back to step 5.
+7. Apply with `npx supabase db push` only after explicit operator approval.
 
 Individual tool repositories must never attempt to deploy their migrations to
 the shared project. This prevents Supabase's global migration ledger from

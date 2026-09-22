@@ -482,7 +482,7 @@ application code, and local database tests.
     migration whose code cannot degrade as gracefully as this one did.
 
 - `20260928000000_active_member_projection_gate.sql` (**catalogued, not yet
-  applied**): KUT's ADR-079, closing KB-017 — a Supabase Security Advisor
+  applied**): KUT's ADR-079, merged in KUT PR #92 (`84de167`), closing KB-017 — a Supabase Security Advisor
   finding. Ten `security_invoker = false` views in the `kut` schema grant
   `SELECT` to this project's shared `authenticated` role and deliberately
   bypass their source tables' RLS, but none proved the caller is a KUT member.

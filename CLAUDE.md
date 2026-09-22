@@ -548,7 +548,12 @@ application code, and local database tests.
   both `not null` with `on delete restrict` foreign keys.
   After the push, `migration list --linked` shows 67 entries with none pending and
   no remote-only drift, `20260927000000` Local = Remote, and the catalogue check
-  reports 67 approved source migrations.
+  reports 67 approved source migrations. Smoke-tested on hosted: the deployed
+  function body contains `v_intent` (`prosrc like '%v_intent%'` is true), so the
+  fix is in the running definition and not merely in the ledger, and the standing
+  invariant still counts zero reports left at `draft` while holding a completion
+  reward. The end-to-end check &mdash; submit, then confirm the RPC refuses a
+  draft &mdash; waits for the next published session, since no survey was open.
 - `20260928000000_active_member_projection_gate.sql` (**catalogued, not yet
   applied**): KUT's ADR-079, merged in KUT PR #92 (`84de167`), closing KB-017 — a Supabase Security Advisor
   finding. Ten `security_invoker = false` views in the `kut` schema grant

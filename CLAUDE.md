@@ -680,6 +680,44 @@ application code, and local database tests.
   check, that the next session publishes and finalizes normally, waits for a
   real session.
 
+- `20260930000000_injury_protection.sql` (**catalogued, not yet applied**):
+  KUT's ADR-082, merged in KUT PR #100 (`efa14df`). **Injury mode.** An admin
+  puts a Player with an active account into injury mode. Each football week the
+  Player sits out, the member does a rehab check-in: +100 KUT Coins, and that
+  week's Activity carries over instead of decaying &times;0.90. Form still
+  fades. Injury mode ends by itself when the Player attends a published session
+  dated after the injury date. Protection is never backdated.
+  **DDL**: tables `kut.injury_periods` (admin-read only; the note may hold
+  medical detail) and `kut.injury_check_ins` (primary key
+  `(player_id, week_start)`, the stipend's idempotency guard and the only fact
+  the rebuild reads). Functions `kut._active_injury_period`,
+  `kut._injury_checkable_week` (service role only), `kut.admin_start_injury`,
+  `kut.admin_end_injury`, `kut.my_injury_status`, `kut.injury_check_in`. View
+  `kut.injured_players` (definer, gated on `kut.is_active_member()`, never
+  exposes the note). An `after update of status` trigger on
+  `kut.match_sessions` sends an `injury_check_in` notice. `wallet_ledger`
+  reasons gain `injury_stipend`, and `user_notifications` event types gain
+  `injury_check_in`.
+  **`kut._rebuild_season_core` is re-emitted** verbatim from `20260920000000`
+  plus one protected-week guard. Rebuilding KUT's local data before and after
+  gave zero differences in 29 players and 174 snapshots: output only changes
+  once a check-in row exists.
+  **Zero DML.**
+  **Tier: data-changing.** It adds a new `wallet_ledger` reason and changes the
+  rating engine, so it needs a fresh, cold-verified backup before the push.
+  **Reverse DDL** is in the migration header. It drops the trigger, view,
+  functions and both tables, re-runs the `20260920000000` rebuild body, and
+  narrows both check constraints after deleting any rows that use the new
+  values.
+  Verified in the KUT repository: 48 pgTAP assertions in
+  `supabase/tests/database/injury_protection.test.sql`. The full KUT suite
+  passes: 21 files, 678 assertions. There was also a manual end-to-end pass on
+  the local stack.
+  **Hosted smoke test after the push**: the new objects exist and the ledger
+  and notification constraints carry the new values; `kut.injured_players`
+  returns zero rows (nobody is injured yet); and KUT's `/admin/roster` shows
+  the Injury column.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

@@ -780,8 +780,8 @@ application code, and local database tests.
   "Why this rating" story (Freek) still lists its sessions, which sum to the
   stated Form total, through the new `select("*")` read.
 
-- `20261002000000_cast_on_market_and_packs.sql` (**catalogued, not yet
-  applied**): KUT's ADR-086, merged in KUT PR #108 (`72ffb70`). The market and
+- `20261002000000_cast_on_market_and_packs.sql` (**applied 2026-09-23**):
+  KUT's ADR-086, merged in KUT PR #108 (`72ffb70`). The market and
   pack openings carry the card's Player, so an injured Player's Live card shows
   the plaster cast there too (ADR-084, ADR-085).
   **DDL**: `kut.active_market_listings` and `kut.my_pack_opening_results` are
@@ -810,6 +810,21 @@ application code, and local database tests.
   is_live`; the market view is still definer with the gate and the pack view
   still invoker; `anon` has no select on either; and `/market` renders
   normally.
+  **Pushed 2026-09-23** from this repository, on its own `db push`, after
+  catalogue PR #46 merged and this checkout was pulled to `1451142`.
+  Additive, so it rode the latest scheduled backup, `20260923-112450`,
+  cold-verified, with 0 escrowed cards. Before the push,
+  `migration list --linked` showed 72 entries with `20261002000000` the only
+  local-only one and no remote-only drift, the dry run named exactly that file,
+  and the catalogue check reported 72 approved source migrations. Afterwards
+  `migration list --linked` shows 72 entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed: both views
+  end in `player_id, is_live`; the market view is still
+  `security_invoker=false` with the `kut.is_active_member()` gate and the pack
+  view still `security_invoker=true`; `anon` has no select on either; and
+  `kut.my_wanted_cards` still resolves. In the app, `/market` loads normally.
+  No Player is in injury mode on hosted today, so the cast itself can't be
+  seen there yet.
 
 ## Repo status
 

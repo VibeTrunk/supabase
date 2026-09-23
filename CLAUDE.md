@@ -680,7 +680,7 @@ application code, and local database tests.
   check, that the next session publishes and finalizes normally, waits for a
   real session.
 
-- `20260930000000_injury_protection.sql` (**catalogued, not yet applied**):
+- `20260930000000_injury_protection.sql` (**applied 2026-09-23**):
   KUT's ADR-082, merged in KUT PR #100 (`efa14df`). **Injury mode.** An admin
   puts a Player with an active account into injury mode. Each football week the
   Player sits out, the member does a rehab check-in: +100 KUT Coins, and that
@@ -717,6 +717,20 @@ application code, and local database tests.
   and notification constraints carry the new values; `kut.injured_players`
   returns zero rows (nobody is injured yet); and KUT's `/admin/roster` shows
   the Injury column.
+  **Pushed 2026-09-23** from this repository, on its own `db push`, after
+  catalogue PR #42 merged and this checkout was pulled to `304a618`.
+  Data-changing, so it was preceded by a fresh backup,
+  `20260923-105756`, cold-verified, with 0 escrowed cards. Before the push,
+  `migration list --linked` showed 70 entries with `20260930000000` the only
+  local-only one and no remote-only drift, the dry run named exactly that file,
+  and the catalogue check reported 70 approved source migrations. Afterwards
+  `migration list --linked` shows 70 entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed: both tables
+  with RLS on, all six functions, the view and the trigger, `injury_stipend` and
+  `injury_check_in` in their check constraints, the protected-week guard in
+  `kut._rebuild_season_core`, no execute for `anon` on `kut.injury_check_in`,
+  and zero injury periods. In the app, `/admin/roster` shows the Injury column
+  and Home renders normally.
 
 ## Repo status
 

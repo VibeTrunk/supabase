@@ -732,6 +732,40 @@ application code, and local database tests.
   and zero injury periods. In the app, `/admin/roster` shows the Injury column
   and Home renders normally.
 
+- `20261001000000_injury_comeback_form.sql` (**catalogued, not yet applied**):
+  KUT's ADR-083, merged in KUT PR #102 (`37e5af4`). **Comeback Form**, the
+  second slice of injury mode. The first published v2 session a Player attends
+  after an injury period with at least 3 protected weeks carries
+  `least(2, 0.25 × protected_weeks)` Form. It ages like a session's
+  goals-and-kudos input over the next four sessions and counts under the
+  unchanged Form cap of 8. Only weeks before the return week count, only the
+  first return counts, and periods ending in the same return are summed once.
+  **DDL**: table `kut.comeback_form_inputs`, which holds derived rows.
+  `kut._rebuild_season_core` deletes and re-derives them from
+  `kut.injury_check_ins` and attendance on every rebuild, like
+  `player_rating_snapshots`, and members read them under
+  `kut.is_active_member()`. `kut._rebuild_season_core` is re-emitted from
+  `20260930000000` with that derivation and a union into the v2 session
+  inputs. `kut.player_form_contributions` is `create or replace`d to union the
+  comeback rows in, with `source` and `protected_weeks` **appended**.
+  **Zero DML.** Rebuilding KUT's local data before and after gave zero
+  differences in 29 players and 174 snapshots; output only changes for a
+  Player with an injury period, 3+ protected weeks and a return.
+  **Tier: data-changing** (rating-formula change). It needs a fresh,
+  cold-verified backup before the push. It depends on `20260930000000`, which is
+  already applied.
+  **Reverse DDL** is in the migration header. `drop view
+  kut.player_form_contributions` (create or replace cannot drop the appended
+  columns), then re-run its `20260926000000` block, re-run the `20260930000000`
+  rebuild body, drop the table and rebuild the active season.
+  Verified in the KUT repository: 25 pgTAP assertions in
+  `supabase/tests/database/injury_comeback.test.sql`. Against the ADR-082 engine,
+  15 of them fail as a negative control. The full KUT suite passes: 22 files,
+  703 assertions.
+  **Hosted smoke test after the push**: the table (RLS on), the engine's
+  comeback union, and the two appended view columns exist; the table is empty;
+  and a card's "Why this rating" story still renders in the app.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

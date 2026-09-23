@@ -780,6 +780,37 @@ application code, and local database tests.
   "Why this rating" story (Freek) still lists its sessions, which sum to the
   stated Form total, through the new `select("*")` read.
 
+- `20261002000000_cast_on_market_and_packs.sql` (**catalogued, not yet
+  applied**): KUT's ADR-086, merged in KUT PR #108 (`72ffb70`). The market and
+  pack openings carry the card's Player, so an injured Player's Live card shows
+  the plaster cast there too (ADR-084, ADR-085).
+  **DDL**: `kut.active_market_listings` and `kut.my_pack_opening_results` are
+  `create or replace`d with `player_id` and `is_live` **appended** as their last
+  two columns, both from `kut.card_editions`. Each body is copied from its
+  latest version (`20260928000000` and `20260902000000` block 5); the only new
+  text is the two appended columns. Access is unchanged: the market view keeps
+  its `kut.is_active_member()` gate, and the pack view stays a
+  `security_invoker` view over the member's own openings.
+  `kut.my_wanted_cards` depends on the market view, which is why this never
+  drops it.
+  **Zero DML. Tier: additive**, so it rides the latest scheduled backup.
+  **Reverse DDL** is in the migration header and optional, since the extra
+  columns do no harm to any reader. It drops and re-runs
+  `kut.my_wanted_cards` and `kut.active_market_listings` (from `20260928000000`
+  and `20260920060000`) and `kut.my_pack_opening_results` (from
+  `20260902000000` block 5).
+  **Deploy ordering**: KUT's pages read both views with `select("*")` and
+  shipped on merge. Until this push they render with no cast, which was checked
+  locally against the old views.
+  Verified in the KUT repository: 26 pgTAP assertions in
+  `supabase/tests/database/cast_on_market_and_packs.test.sql`. Run against the
+  old views as a negative control, its six schema assertions fail and its first
+  value query errors. The full KUT suite passes: 23 files, 729 assertions.
+  **Hosted smoke test after the push**: both views end in `player_id,
+  is_live`; the market view is still definer with the gate and the pack view
+  still invoker; `anon` has no select on either; and `/market` renders
+  normally.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

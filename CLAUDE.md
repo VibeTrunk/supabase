@@ -732,7 +732,7 @@ application code, and local database tests.
   and zero injury periods. In the app, `/admin/roster` shows the Injury column
   and Home renders normally.
 
-- `20261001000000_injury_comeback_form.sql` (**catalogued, not yet applied**):
+- `20261001000000_injury_comeback_form.sql` (**applied 2026-09-23**):
   KUT's ADR-083, merged in KUT PR #102 (`37e5af4`). **Comeback Form**, the
   second slice of injury mode. The first published v2 session a Player attends
   after an injury period with at least 3 protected weeks carries
@@ -765,6 +765,20 @@ application code, and local database tests.
   **Hosted smoke test after the push**: the table (RLS on), the engine's
   comeback union, and the two appended view columns exist; the table is empty;
   and a card's "Why this rating" story still renders in the app.
+  **Pushed 2026-09-23** from this repository, on its own `db push`, after
+  catalogue PR #44 merged and this checkout was pulled to `18a8b45`.
+  Data-changing, so it was preceded by a fresh backup, `20260923-112450`,
+  cold-verified, with 0 escrowed cards. Before the push,
+  `migration list --linked` showed 71 entries with `20261001000000` the only
+  local-only one and no remote-only drift, the dry run named exactly that file,
+  and the catalogue check reported 71 approved source migrations. Afterwards
+  `migration list --linked` shows 71 entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed: the table
+  exists with RLS on and its one policy, `anon` has no select, it holds zero
+  rows, the engine carries both the protected-week guard and the comeback
+  union, and the view has both appended columns. In the app, a Live card's
+  "Why this rating" story (Freek) still lists its sessions, which sum to the
+  stated Form total, through the new `select("*")` read.
 
 ## Repo status
 

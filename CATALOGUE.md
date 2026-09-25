@@ -896,3 +896,46 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   entries, all present locally and remotely.
   **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
   above: `timestamp with time zone:YES:none | 0 | true | true | false | true`.
+
+- `20261005000000_midweek_engine.sql` (**catalogued, not yet applied**):
+  KUT's Midweek Madness migration C (BUILD_SPEC §44.3–§44.11, §44.14; Part L
+  #25; ADR-090, ADR-091, ADR-095), merged in KUT PR #125 (`51a08e8`). The
+  engine, the lazy worker, the stored result, the reveal projections and the
+  admin controls. No coins: payouts come in the next migration.
+  **DDL**: the engine as internal `kut._mm_*` functions (a port of KUT's
+  TypeScript twin, pinned by a generated pgTAP parity test), revoked from
+  `public`, `anon` and `authenticated`. Six tables with RLS on and only
+  `service_role` select: `midweek_entries`, `midweek_entry_cards`,
+  `midweek_pick_shares`, `midweek_matches`, `midweek_match_events`,
+  `midweek_jobs`. Two nullable columns on `kut.midweek_tournaments`
+  (`voided_at`, `voided_by`). Eight guard triggers for Part L #25 (results
+  written once and never changed, a tournament only moves forward, squads
+  immutable after the lock). The service-role worker
+  `kut.run_midweek_due(integer)`. Five new definer views gated on
+  `kut.is_active_member()` and on time (the admin overview on
+  `kut.is_admin()`), and `create or replace` of
+  `kut.midweek_tournaments_public` appending `champion_user_id` and
+  `champion_name` at the end. Admin RPCs `admin_set_midweek_enabled`,
+  `admin_void_midweek` and `admin_midweek_rehearsal`, granted to
+  `authenticated` and `service_role` and checked with `kut.is_admin()` inside.
+  **DML**: none. The worker writes only once a tournament exists, which needs
+  the switch, still off on hosted. **Tier: additive**, so it rides the latest
+  scheduled backup, `20260923-112450`, cold-verified.
+  **Reverse DDL** is in the migration header (switch off, no tournament
+  simulated): drop the admin functions, the new views, re-create the tournament
+  list from `20261003000000`, drop the worker, the triggers, the six tables and
+  the two columns, then the `_mm_*` functions.
+  **Deploy ordering**: KUT PR #125 has no UI, so the merge deployed ahead of
+  the push is harmless.
+  Verified in the KUT repository: 160 parity assertions in
+  `supabase/tests/database/midweek_engine_parity.test.sql` and 147 in
+  `midweek_engine.test.sql` (access matrix, worker lifecycle and gates, lock
+  snapshot, reveal timing, owner counts, a second call changing nothing, the
+  #25 guards, void, a rehearsal that writes nothing, the switch and the open
+  step), plus `tests/integration/midweek-race.test.ts` (three concurrent
+  worker calls). CI's database job passed on KUT PR #125.
+  **Hosted smoke test after the push**: the six tables and five views exist,
+  the tournament list ends with `champion_name`, all eight guards are in place,
+  only `service_role` can run the worker, members cannot run the engine, the
+  engine reproduces a golden draw and a golden lock time (so the hosted time
+  zone data agrees), the switch is off and no tournament exists.

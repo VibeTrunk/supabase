@@ -31,8 +31,8 @@ Every catalogued migration, with its tier, backup, pre- and post-push
 [`CATALOGUE.md`](CATALOGUE.md). Add new entries there, never here, so this
 file stays orientation.
 
-**Latest applied migration:** KUT's `20261004000000_archetype_cooldown.sql`
-(catalogue PR #50), pushed 2026-09-25; `migration list --linked` showed 74
+**Latest applied migration:** KUT's `20261005000000_midweek_engine.sql`
+(catalogue PR #52), pushed 2026-09-26; `migration list --linked` showed 75
 entries, all present locally and remotely, no drift.
 
 ## Repo status

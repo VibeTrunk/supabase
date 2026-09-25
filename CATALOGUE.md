@@ -897,7 +897,7 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
   above: `timestamp with time zone:YES:none | 0 | true | true | false | true`.
 
-- `20261005000000_midweek_engine.sql` (**catalogued, not yet applied**):
+- `20261005000000_midweek_engine.sql` (**applied 2026-09-26**):
   KUT's Midweek Madness migration C (BUILD_SPEC §44.3–§44.11, §44.14; Part L
   #25; ADR-090, ADR-091, ADR-095), merged in KUT PR #125 (`51a08e8`). The
   engine, the lazy worker, the stored result, the reveal projections and the
@@ -939,3 +939,15 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   only `service_role` can run the worker, members cannot run the engine, the
   engine reproduces a golden draw and a golden lock time (so the hosted time
   zone data agrees), the switch is off and no tournament exists.
+  **Pushed 2026-09-26** from this repository, on its own `db push`, after
+  catalogue PR #52 merged and this checkout was pulled to `93c9a57`.
+  Additive, so it rode the latest scheduled backup, `20260923-112450`,
+  cold-verified. Before the push, `migration list --linked` showed 75 entries
+  with `20261005000000` the only local-only one and no remote-only drift, the
+  dry run named exactly that file, and the catalogue check reported 75
+  approved source migrations. Afterwards `migration list --linked` shows 75
+  entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
+  above, identical to the local run:
+  `6/6 | 5/5 | champion_name | 8/8 | false:false:true | false | true | true | false | 0`.
+  There is nothing to see in the app yet.

@@ -858,7 +858,7 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   above: `6/6 | 1:true | 0 | false | false | false | 3/3`. There is nothing to
   see in the app yet.
 
-- `20261004000000_archetype_cooldown.sql` (**catalogued, not yet applied**):
+- `20261004000000_archetype_cooldown.sql` (**applied 2026-09-25**):
   KUT's Midweek Madness migration B (BUILD_SPEC §44.2, §44.14; ADR-089,
   ADR-094), merged in KUT PR #122 (`f15f072`). A member may change their own
   Player's archetype at most once every 14 days, because the archetype shapes
@@ -886,3 +886,13 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   **Hosted smoke test after the push**: the column is a nullable timestamptz
   with no default, no Player is stamped yet, the function is definer and
   carries the guard, `anon` cannot execute it and `authenticated` can.
+  **Pushed 2026-09-25** from this repository, on its own `db push`, after
+  catalogue PR #50 merged and this checkout was pulled to `5285e29`.
+  Additive, so it rode the latest scheduled backup, `20260923-112450`,
+  cold-verified. Before the push, `migration list --linked` showed 74 entries
+  with `20261004000000` the only local-only one and no remote-only drift, the
+  dry run named exactly that file, and the catalogue check reported 74
+  approved source migrations. Afterwards `migration list --linked` shows 74
+  entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
+  above: `timestamp with time zone:YES:none | 0 | true | true | false | true`.

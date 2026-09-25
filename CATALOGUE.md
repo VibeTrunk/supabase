@@ -857,3 +857,32 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
   above: `6/6 | 1:true | 0 | false | false | false | 3/3`. There is nothing to
   see in the app yet.
+
+- `20261004000000_archetype_cooldown.sql` (**catalogued, not yet applied**):
+  KUT's Midweek Madness migration B (BUILD_SPEC §44.2, §44.14; ADR-089,
+  ADR-094), merged in KUT PR #122 (`f15f072`). A member may change their own
+  Player's archetype at most once every 14 days, because the archetype shapes
+  a Midweek squad's lines.
+  **DDL**: one nullable column, `kut.players.archetype_changed_at timestamptz`,
+  with no default and a comment. `create or replace` of
+  `kut.set_own_player_archetype(text)`, whose body is copied from
+  `20260906000000` plus the guard: it locks the Player row, refuses a change
+  within 336 hours of the stamp (`22023`, next allowed moment in the DETAIL),
+  and stamps `now()` on an actual change. Re-saving the current archetype is
+  neither refused nor stamped. Grants unchanged: revoked from `public` and
+  `anon`, granted to `authenticated`.
+  **DML**: none. Nothing is backfilled, so every member's first change is
+  allowed. **Tier: additive**, so it rides the latest scheduled backup.
+  **Reverse DDL** is in the migration header: re-create the function from
+  `20260906000000`, then drop the column.
+  **Deploy ordering**: `/settings/card` reads the new column in its own query
+  and treats a missing column as "never changed", so the merge deployed ahead
+  of the push is harmless. The rule applies from the push.
+  Verified in the KUT repository: 28 pgTAP assertions in
+  `supabase/tests/database/archetype_cooldown.test.sql` (the first change,
+  the refusal and its DETAIL, the same-archetype re-save, both edges of the
+  window, the admin path, the other refusals unchanged). CI's database job
+  passed on KUT PR #122.
+  **Hosted smoke test after the push**: the column is a nullable timestamptz
+  with no default, no Player is stamped yet, the function is definer and
+  carries the guard, `anon` cannot execute it and `authenticated` can.

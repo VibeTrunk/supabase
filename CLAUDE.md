@@ -826,6 +826,40 @@ application code, and local database tests.
   No Player is in injury mode on hosted today, so the cast itself can't be
   seen there yet.
 
+- `20261003000000_midweek_entry.sql` (**catalogued, not yet applied**): KUT's
+  Midweek Madness migration A (BUILD_SPEC §44.14; ADR-089, ADR-091), merged in
+  KUT PR #120 (`df6a0b6`). Midweek Madness is a weekly 5-card squad knockout;
+  this migration adds only what a member needs to enter. The engine, worker,
+  reveal views and payouts follow as their own migrations (ADR-070).
+  **DDL**: six new tables, all with RLS on, everything revoked from `public`,
+  `anon` and `authenticated`, and `select` for `service_role` only:
+  `kut.midweek_config` (a single-row launch switch, `enabled` default false),
+  `kut.midweek_tournaments`, `kut.midweek_tournament_secrets` (the seed,
+  ADR-091), `kut.midweek_squads`, `kut.midweek_squad_cards` and
+  `kut.midweek_opt_outs`. Two definer RPCs, `kut.save_midweek_squad(uuid[])`
+  and `kut.set_midweek_opt_out(boolean)`, executable by `authenticated` and
+  `service_role` only. Three definer views gated on `kut.is_active_member()`
+  (ADR-079), `kut.midweek_current`, `kut.midweek_tournaments_public` and
+  `kut.my_midweek_squad`, selectable by `authenticated` and `service_role`
+  only.
+  **DML**: one insert, the switch row `(true, false)` into the new
+  `kut.midweek_config`. No existing row is touched and no coin moves. **Tier:
+  additive**, so it rides the latest scheduled backup.
+  **Nothing goes live with it**: nothing creates a tournament until the engine
+  migration's worker ships, and the switch starts off.
+  **Reverse DDL** is in the migration header: drop the three views, the two
+  functions and the six tables.
+  **Deploy ordering**: no KUT page reads these objects yet, so the merge
+  deployed ahead of the push is harmless.
+  Verified in the KUT repository: 89 pgTAP assertions in
+  `supabase/tests/database/midweek_entry.test.sql` (the access matrix on every
+  table, view and function; every refusal code; squads private before the
+  lock; opt-out; the lock). CI's database job passed on KUT PR #120.
+  **Hosted smoke test after the push**: the six tables exist with RLS on; the
+  switch row is present and off; no tournament exists; `anon` and
+  `authenticated` can read none of the tables and `anon` none of the views;
+  `anon` can execute neither RPC; and the three views are definer and gated.
+
 ## Repo status
 
 - Branch protection on `main` enabled 2026-08-23 (squash-only merges, PRs

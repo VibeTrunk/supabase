@@ -1005,7 +1005,19 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   payouts for five rounds, the switch off, no tournament and no `midweek_win`
   ledger row.
 
-- `20261007000000_midweek_switch_where.sql` (**catalogued, not yet applied**):
+- `20261007000000_midweek_switch_where.sql` (**applied 2026-09-26**):
+  **Pushed 2026-09-26** from this repository, on its own `db push`, after
+  catalogue PR #56 merged and this checkout was pulled to `a108744`.
+  Additive; it rode the fresh backup `20260926-102414`, cold-verified.
+  Before the push, `migration list --linked` showed 77 entries with
+  `20261007000000` the only local-only one and no remote-only drift, the dry
+  run named exactly that file, and the catalogue check reported 77 approved
+  source migrations. Afterwards `migration list --linked` shows 77 entries,
+  all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
+  above, identical to the local run: `true | 0 | false | true | true | false | 0`.
+  The owner then switched Midweek Madness on from `/admin/midweek`, which
+  the fix made possible; the first week locks Wed 30 Sep 2026 20:00.
   KUT's fix for KB-024 (BUILD_SPEC §44.8; ADR-095), merged in KUT PR #131
   (`35fbe02`). The Midweek launch switch failed on hosted:
   `kut.admin_set_midweek_enabled` updated the single-row

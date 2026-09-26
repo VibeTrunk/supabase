@@ -952,7 +952,19 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `6/6 | 5/5 | champion_name | 8/8 | false:false:true | false | true | true | false | 0`.
   There is nothing to see in the app yet.
 
-- `20261006000000_midweek_payouts.sql` (**catalogued, not yet applied**):
+- `20261006000000_midweek_payouts.sql` (**applied 2026-09-26**):
+  **Pushed 2026-09-26** from this repository, on its own `db push`, after
+  catalogue PR #54 merged and this checkout was pulled to `3db335a`.
+  Data-changing, so it took a fresh backup, `20260926-052453`, cold-verified.
+  Before the push, `migration list --linked` showed 76 entries with
+  `20261006000000` the only local-only one and no remote-only drift, the dry
+  run named exactly that file, and the catalogue check reported 76 approved
+  source migrations. Afterwards `migration list --linked` shows 76 entries,
+  all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
+  above, identical to the local run:
+  `true | tournament_id,week_start,round_no,match_id,bye,amount,paid_at | true | true | 1 | true | false | false | true | 17,33,50,67,83 | false | 0 | 0`.
+  Nothing pays until the switch is turned on at launch.
   KUT's Midweek Madness migration D (BUILD_SPEC §44.7, §44.14; Part L #26;
   ADR-096), merged in KUT PR #127 (`282ea1c`). The payouts: every match won
   pays coins by round, a bye as a round-1 win, and a champion collects 250.

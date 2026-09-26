@@ -1041,3 +1041,44 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   function writes without a `WHERE`, `anon` cannot execute it and
   `authenticated` can, it is still security definer, and the switch is still
   off with no tournament.
+
+- `20261008000000_midweek_archetype_snapshot.sql` (**catalogued, not yet
+  applied**): KUT's Midweek archetype snapshot (BUILD_SPEC §44.2, §44.11;
+  ADR-099), merged in KUT PR #133 (`77357bf`). The lock read each card's
+  archetype live, so a member could change their own archetype just before
+  the lock and reshape squads others had already picked. Archetypes are now
+  frozen when a week opens; OVR, injuries and ownership are still read live
+  at the lock.
+  **DDL**: new table `kut.midweek_archetype_snapshots` (primary key
+  `(tournament_id, player_id)`, both cascading; RLS on, only `service_role`
+  select). Internal `kut._mm_snapshot_archetypes()` (revoked from `public`,
+  `anon`, `authenticated`) behind the `after insert` trigger
+  `midweek_tournament_archetype_snapshot` on `kut.midweek_tournaments`.
+  `create or replace` of `kut._mm_field(uuid, timestamptz)`, reading
+  `coalesce(snapshot.archetype, player.archetype)`, otherwise identical. New
+  definer view `kut.midweek_archetypes` gated on `kut.is_active_member()`,
+  granted to `authenticated` and `service_role`.
+  **DML**: backfills the week open at the push (2026-09-28, locking Wed 30
+  Sep 20:00) with every Player's archetype as it stands then, into the new
+  table only. **Tier: data-changing** (a backfill, and the lock reads a new
+  source), so it took a fresh backup, `20260926-154520`, cold-verified.
+  **Reverse DDL**: re-create `kut._mm_field` from `20261005000000` section 4,
+  then drop the view, the trigger, the function and the table.
+  **Deploy ordering**: KUT PR #133 deployed ahead of the push; the picker
+  tolerates the missing view and falls back to the live archetype, which is
+  what the lock reads until the push.
+  Verified in the KUT repository: `supabase/tests/database/midweek_archetype_snapshot.test.sql`
+  (19: the snapshot at open, a change after the open leaves it alone, member
+  and disabled-member reads, the fallback for a Player created after the
+  open, the lock plays the snapshot, the next week picks up the change) and
+  the full database suite (1243). CI passed on KUT PR #133.
+  Read-only pre-checks from this branch: `migration list --linked` shows 78
+  entries with `20261008000000` the only local-only one and no remote-only
+  drift; the dry run would push exactly that file; the catalogue check
+  reports 78 approved source migrations.
+  **Hosted smoke test after the push** (as `service_role`): the open week is
+  2026-09-28, every Player has a snapshot row for it matching their live
+  archetype, the trigger is enabled, `_mm_field` reads the snapshot,
+  `authenticated` reads the view but not the table, `anon` reads neither, and
+  there is one tournament. The local run returned
+  `2026-09-28 | t | t | t | t | t | f | f | 1`.

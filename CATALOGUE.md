@@ -1004,3 +1004,28 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   unable to pay or read the table but able to read the view, the round
   payouts for five rounds, the switch off, no tournament and no `midweek_win`
   ledger row.
+
+- `20261007000000_midweek_switch_where.sql` (**catalogued, not yet applied**):
+  KUT's fix for KB-024 (BUILD_SPEC §44.8; ADR-095), merged in KUT PR #131
+  (`35fbe02`). The Midweek launch switch failed on hosted:
+  `kut.admin_set_midweek_enabled` updated the single-row
+  `kut.midweek_config` without a `WHERE`, and PostgREST's `authenticator`
+  role preloads `safeupdate`, which rejects that (SQLSTATE 21000). The
+  database suites connect as `postgres` and never load it.
+  **DDL**: `create or replace` of `kut.admin_set_midweek_enabled(boolean)`
+  with `where id`, otherwise identical (checks, errors, grants, return value).
+  **DML**: none. **Tier: additive**; the fresh cold-verified backup
+  `20260926-102414`, taken for the Midweek launch, also covers it.
+  **Reverse DDL**: re-create the function from `20261005000000` section 6
+  (the switch is then unusable through the API again).
+  **Deploy ordering**: KUT PR #131 changes no app code, so the merge deployed
+  ahead of the push is harmless.
+  Verified in the KUT repository: `supabase/tests/database/midweek_switch.test.sql`
+  (no `kut` function updates or deletes without a `WHERE`; the switch on, off
+  and refused to a member) and `tests/integration/midweek-switch.test.ts`
+  (the switch called as `authenticator`, as the API does; it fails on the old
+  function). CI's database job passed on KUT PR #131.
+  **Hosted smoke test after the push**: the function names its row, no `kut`
+  function writes without a `WHERE`, `anon` cannot execute it and
+  `authenticated` can, it is still security definer, and the switch is still
+  off with no tournament.

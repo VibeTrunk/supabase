@@ -1042,8 +1042,20 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `authenticated` can, it is still security definer, and the switch is still
   off with no tournament.
 
-- `20261008000000_midweek_archetype_snapshot.sql` (**catalogued, not yet
-  applied**): KUT's Midweek archetype snapshot (BUILD_SPEC §44.2, §44.11;
+- `20261008000000_midweek_archetype_snapshot.sql` (**applied 2026-09-26**):
+  **Pushed 2026-09-26** from this repository, on its own `db push`, after
+  catalogue PR #58 merged and this checkout was pulled to `433889d`.
+  Data-changing; it took the fresh backup `20260926-154520`, cold-verified.
+  Before the push, `migration list --linked` showed 78 entries with
+  `20261008000000` the only local-only one and no remote-only drift, the dry
+  run named exactly that file, and the catalogue check reported 78 approved
+  source migrations. Afterwards `migration list --linked` shows 78 entries,
+  all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row
+  confirmed all of the smoke checks below, identical to the local run:
+  `2026-09-28 | true | true | true | true | true | false | false | 1`.
+  The first week (locking Wed 30 Sep 2026 20:00) is snapshotted.
+  KUT's Midweek archetype snapshot (BUILD_SPEC §44.2, §44.11;
   ADR-099), merged in KUT PR #133 (`77357bf`). The lock read each card's
   archetype live, so a member could change their own archetype just before
   the lock and reshape squads others had already picked. Archetypes are now

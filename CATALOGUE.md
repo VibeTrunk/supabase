@@ -951,3 +951,44 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   above, identical to the local run:
   `6/6 | 5/5 | champion_name | 8/8 | false:false:true | false | true | true | false | 0`.
   There is nothing to see in the app yet.
+
+- `20261006000000_midweek_payouts.sql` (**catalogued, not yet applied**):
+  KUT's Midweek Madness migration D (BUILD_SPEC §44.7, §44.14; Part L #26;
+  ADR-096), merged in KUT PR #127 (`282ea1c`). The payouts: every match won
+  pays coins by round, a bye as a round-1 win, and a champion collects 250.
+  **DDL**: `wallet_ledger_reason_check` re-created with `midweek_win` and
+  `user_notifications_event_type_check` with `midweek_result` (drop by lookup,
+  full lists copied from `20260930000000`). New table `kut.midweek_rewards`
+  (primary key `(tournament_id, round_no, user_id)`, unique `match_id`,
+  deferred `ledger_id`; RLS on, only `service_role` select) with the Part L #26
+  guard trigger `midweek_rewards_guard`. Internal `kut._mm_pay_tournament(uuid)`
+  (revoked from `public`, `anon`, `authenticated`); `create or replace` of
+  `kut._mm_complete_tournament(uuid)` so the worker pays before a week
+  completes, in one transaction. New definer view `kut.my_midweek_rewards`
+  gated on `kut.is_active_member()`, granted to `authenticated` and
+  `service_role`.
+  **DML**: none. Nothing pays until a tournament exists, which needs the
+  switch, still off on hosted. **Tier: data-changing** (a new coin faucet and
+  a widened ledger constraint), so it took a fresh backup,
+  `20260926-052453`, cold-verified.
+  **Reverse DDL** is in the migration header (switch off, nothing simulated or
+  completed since): re-create `_mm_complete_tournament` from
+  `20261005000000`, drop the view, `_mm_pay_tournament`, the trigger, its
+  function and the table, then re-create both constraints from
+  `20260930000000` once no row uses the new values.
+  **Deploy ordering**: KUT PR #127 labels `midweek_result` in the inbox and
+  adds a constant; neither depends on the schema, so the merge deployed ahead
+  of the push is harmless.
+  Verified in the KUT repository: 63 assertions in
+  `supabase/tests/database/midweek_payouts.test.sql` (every win paid once at
+  its round's amount, the champion's 250 in brackets of 16, 8 and 4, byes,
+  ledger equals wallet moves, one message per member paid, a second call pays
+  nothing, the guard, void after payout refused, the member view), and
+  `tests/integration/midweek-race.test.ts` (three concurrent worker calls pay
+  once). CI's database job passed on KUT PR #127.
+  **Hosted smoke test after the push**: RLS on the rewards table, the member
+  view's columns, both constraints carrying the new values after the old
+  ones, the guard trigger, the complete step calling the payout, members
+  unable to pay or read the table but able to read the view, the round
+  payouts for five rounds, the switch off, no tournament and no `midweek_win`
+  ledger row.

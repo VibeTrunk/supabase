@@ -1094,3 +1094,48 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `authenticated` reads the view but not the table, `anon` reads neither, and
   there is one tournament. The local run returned
   `2026-09-28 | t | t | t | t | t | f | f | 1`.
+
+- `20261009000000_goals_assists_notice_copy.sql` (**catalogued, not yet
+  applied**): KUT's goals + assists report (BUILD_SPEC §8, §15.2 and the
+  2026-09-27 amendment; ADR-101), merged in KUT PR #137 (`86bd248`). From the
+  football week beginning 2026-09-28 a member reports one combined goals +
+  assists count ("G+A"); earlier sessions keep meaning goals. The pages carry
+  the wording themselves; this migration changes only the notices SQL writes.
+  **DDL**: new immutable `kut._uses_combined_count(date)` (`date >=
+  2026-09-28`; revoked from `public` and `anon`, executable by
+  `service_role`). `create or replace` of `kut._open_session_survey()`
+  (report-open title "Goals + Assists & kudos"), `kut._finalize_one_session(uuid)`
+  (results body "Reported G+A and recognized kudos are now in the
+  Chronicle."; kudos body "Your 4 G+A and these kudos ...") and
+  `kut.admin_correct_session_goals(uuid,uuid,integer,boolean,text)` ("Reported
+  G+A corrected", "the effective G+A total"), each only for a session dated on
+  or after 2026-09-28 and otherwise verbatim from its latest body (locking,
+  scoring, rebuild, `on conflict do nothing`, security definer and
+  `search_path` unchanged; the grants are restated as they were).
+  **DML**: none. Notices already written keep their wording. **Tier:
+  additive** (function bodies and one new function), so it rides on the
+  latest backup; a fresh one was taken anyway because the first G+A session is
+  on 28 Sep: `20260927-180300`, cold-verified (one card escrowed in an open
+  offer, recorded in the backup log).
+  **Reverse DDL**: re-run the `kut._finalize_one_session` block from
+  `20260925000000` and the `kut._open_session_survey` and
+  `kut.admin_correct_session_goals` blocks from `20260920000000` as
+  `create or replace`, then drop `kut._uses_combined_count(date)`.
+  **Deploy ordering**: KUT PR #137 deploys on merge and needs nothing new from
+  the database. Until this push, notices for sessions from 28 Sep are written
+  in the goals wording and keep it, so push before the 28 Sep session is
+  published, or at the latest before its 24-hour report window closes.
+  Verified in the KUT repository: `supabase/tests/database/goals_assists_cutover.test.sql`
+  (48: every notice on a 27 Sep and a 28 Sep session, the unchanged 0 / 1 /
+  1.25 / 1.5 ladder, the 3.5 session cap, Form 8, Live OVR 83, SHO +8) and the
+  full database suite (1291). CI passed on KUT PR #137.
+  Read-only pre-checks from this branch: `migration list --linked` shows 79
+  entries with `20261009000000` the only local-only one and no remote-only
+  drift; the dry run would push exactly that file; the catalogue check
+  reports 79 approved source migrations.
+  **Hosted smoke test after the push** (as `service_role`): 27 Sep is not G+A
+  and 28 Sep is; the three functions carry the new wording and are still
+  security definer; the report-open trigger is enabled; `authenticated` can
+  run the admin correction but neither `_finalize_one_session` nor the
+  helper; `anon` cannot run the correction. The local run returned
+  `f | t | t | t | t | t | t | t | f | f | f`.

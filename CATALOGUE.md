@@ -1095,8 +1095,16 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   there is one tournament. The local run returned
   `2026-09-28 | t | t | t | t | t | f | f | 1`.
 
-- `20261009000000_goals_assists_notice_copy.sql` (**catalogued, not yet
-  applied**): KUT's goals + assists report (BUILD_SPEC §8, §15.2 and the
+- `20261009000000_goals_assists_notice_copy.sql` (**applied 2026-09-27**):
+  **Pushed 2026-09-27** from this repository, on its own `db push`, after
+  catalogue PR #60 merged (`b747621`). Additive; the fresh backup
+  `20260927-180300` was taken anyway, cold-verified. Afterwards
+  `migration list --linked` shows 79 entries, all present locally and
+  remotely.
+  **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row
+  confirmed all of the smoke checks below, identical to the local run:
+  `false | true | true | true | true | true | true | true | false | false | false`.
+  KUT's goals + assists report (BUILD_SPEC §8, §15.2 and the
   2026-09-27 amendment; ADR-101), merged in KUT PR #137 (`86bd248`). From the
   football week beginning 2026-09-28 a member reports one combined goals +
   assists count ("G+A"); earlier sessions keep meaning goals. The pages carry

@@ -1148,8 +1148,17 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   helper; `anon` cannot run the correction. The local run returned
   `f | t | t | t | t | t | t | t | f | f | f`.
 
-- `20261010000000_market_listing_discard_value.sql` (**catalogued, not yet
-  applied**): KUT's market discard value (KB-027, BUILD_SPEC §36, ADR-103),
+- `20261010000000_market_listing_discard_value.sql` (**applied 2026-09-30**):
+  **Pushed 2026-09-30** from this repository, on its own `db push`, after
+  catalogue PR #62 merged (`c75bae2`). Additive; the fresh backup
+  `20260930-163158` was taken anyway, cold-verified. Afterwards
+  `migration list --linked` shows 80 entries, all present locally and
+  remotely.
+  **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row
+  confirmed all of the smoke checks below, matching the local run apart from
+  the live listing count:
+  `discard_value | {security_invoker=false,security_barrier=true} | true | false | 15 | 0 | 0`.
+  KUT's market discard value (KB-027, BUILD_SPEC §36, ADR-103),
   merged in KUT PR #140 (`6553f24`). The listing detail page shows what a
   listed card discards for, as the floor to judge its asking price against.
   **DDL**: `create or replace view kut.active_market_listings` with its

@@ -1147,3 +1147,48 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   run the admin correction but neither `_finalize_one_session` nor the
   helper; `anon` cannot run the correction. The local run returned
   `f | t | t | t | t | t | t | t | f | f | f`.
+
+- `20261010000000_market_listing_discard_value.sql` (**catalogued, not yet
+  applied**): KUT's market discard value (KB-027, BUILD_SPEC §36, ADR-103),
+  merged in KUT PR #140 (`6553f24`). The listing detail page shows what a
+  listed card discards for, as the floor to judge its asking price against.
+  **DDL**: `create or replace view kut.active_market_listings` with its
+  `20261002000000` body verbatim and one column appended last, inside the
+  ADR-079 `is_active_member()` wrapper: `discard_value`, which calls
+  `kut.card_discard_value(card.id)` only when the card has a rating
+  (`coalesce(snapshot_ovr, live_ovr) is not null`) and is null otherwise,
+  because the function raises P0002 for an unrated card. The view stays
+  `security_invoker = false`, `security_barrier = true`; its revoke/grant is
+  restated unchanged. `grant execute on function kut.card_discard_value(uuid)
+  to authenticated, service_role`: a function inside a view is checked against
+  the caller even in a definer view, so without it every member and
+  service-role read of the view (and of `kut.my_wanted_cards`) fails. A small
+  access change, recorded in ADR-103; `anon` stays revoked.
+  **DML**: none. **Tier: additive** (a view gains a trailing column, plus one
+  function grant), so it rides on the latest backup; a fresh one was taken
+  anyway: `20260930-163158`, cold-verified, no cards in escrow.
+  **Reverse DDL**: `drop view kut.my_wanted_cards; drop view
+  kut.active_market_listings;`, re-run the `kut.active_market_listings` block
+  of `20261002000000` (with its revoke/grant), then the whole of
+  `20260920060000`; then `revoke execute on function
+  kut.card_discard_value(uuid) from authenticated, service_role;`. The column
+  is harmless to every reader, so rolling back is optional.
+  **Deploy ordering**: KUT PR #140 deployed on merge. The page reads the view
+  with `select("*")` and renders nothing while the column is absent, so until
+  this push the listing page simply has no discard line.
+  Verified in the KUT repository: `supabase/tests/database/market_listing_card_art.test.sql`
+  (21: the column comes last, reloptions unchanged, the function grants, Live
+  160 and Special 120 equal `card_discard_value`, an unrated card stays listed
+  with null, a profileless and a disabled caller read 0 rows, `anon` is refused,
+  `service_role` still reads the view and `my_wanted_cards`) and the full
+  database suite (1307). CI passed on KUT PR #140.
+  Read-only pre-checks from this branch: `migration list --linked` shows 80
+  entries with `20261010000000` the only local-only one and no remote-only
+  drift; the dry run would push exactly that file; the catalogue check
+  reports 80 approved source migrations.
+  **Hosted smoke test after the push** (as `service_role`): `discard_value` is
+  the last column; the view keeps `{security_invoker=false,security_barrier=true}`;
+  `authenticated` can execute `card_discard_value` and `anon` cannot; then the
+  listing count, how many have a null value, and how many disagree with the
+  function (must be 0). The local run returned
+  `discard_value | {security_invoker=false,security_barrier=true} | t | f | 0 | 0 | 0`.

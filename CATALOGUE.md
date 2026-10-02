@@ -1264,8 +1264,16 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   list's last column. The local run, with an open week of 5 Oct, returned
   `2 | 3 | t | 2 | 2026-10-05 v2 Wed 19:55 | 0 | 0 | 0 | schedule_version`.
 
-- `20261012000000_midweek_draw_from_lock.sql` (**catalogued, not yet
-  applied**): what KUT members may read of a Midweek Madness week from the lock
+- `20261012000000_midweek_draw_from_lock.sql` (**applied 2026-10-02**):
+  **Pushed 2026-10-02** from this repository, on its own `db push`, after
+  catalogue PR #66 merged (`871f121`), on the fresh backup `20261002-110621`.
+  The KUT production gate passed beforehand for candidate `2f3a94a` (KUT #152
+  plus the Compete navigation #153). The post-push `migration list` was not
+  re-run; the smoke row's first column confirms the version is recorded.
+  **Smoke-tested on hosted.** In the SQL editor, one row matched the local run
+  exactly:
+  `true | security_invoker=false,security_barrier=true | true | 10 | 26 | true | evening_live | true`.
+  What KUT members may read of a Midweek Madness week from the lock
   (MM 2.0 B2, BUILD_SPEC §44.9, §44.14, ADR-105), merged in KUT PR #152
   (`b62c913`). **Views only.** New `kut.midweek_draw_public` (definer, barrier,
   gated on `kut.is_active_member()`; round 1's pairings and byes, both managers

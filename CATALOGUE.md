@@ -1263,3 +1263,42 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   version, matches with a stored end (0 until the next lock), and the tournament
   list's last column. The local run, with an open week of 5 Oct, returned
   `2 | 3 | t | 2 | 2026-10-05 v2 Wed 19:55 | 0 | 0 | 0 | schedule_version`.
+
+- `20261012000000_midweek_draw_from_lock.sql` (**catalogued, not yet
+  applied**): what KUT members may read of a Midweek Madness week from the lock
+  (MM 2.0 B2, BUILD_SPEC §44.9, §44.14, ADR-105), merged in KUT PR #152
+  (`b62c913`). **Views only.** New `kut.midweek_draw_public` (definer, barrier,
+  gated on `kut.is_active_member()`; round 1's pairings and byes, both managers
+  and `kickoff_at` from the lock, no result column; select to authenticated and
+  service_role, revoked from public and anon). Re-created with the same
+  columns: `kut.midweek_entries_public`, now from the lock instead of round 1,
+  with `form_roll_ppm`, `pick_factor_ppm` and `power_ppm` null until round 1
+  kicks off. Re-created: `kut.midweek_tournaments_public` and
+  `kut.midweek_current` with `final_reveal_at` null until it has passed (since
+  ADR-104 it is the end of the final, which at the lock told an API reader
+  whether the final goes to penalties); `kut.midweek_current` appends
+  `evening_live`. Definer mode, barrier and member gate unchanged throughout.
+  **No DML. Tier: additive** (views only); fresh backup anyway for the release
+  gate: `20261002-110621`, cold-verified, no cards in escrow.
+  **Reverse DDL**: in the migration's header (drop the draw view; re-create the
+  entries view from `20261005000000`; drop and re-create `midweek_current` and
+  `midweek_tournaments_public` from `20261011000000`, re-applying their grants
+  from `20261003000000`).
+  **Deploy ordering**: KUT PR #152 deployed on merge, then KUT PR #153 (the
+  Compete tab). Pages read every view with `select("*")`; the badge reads
+  `evening_live` tolerantly and falls back to `final_reveal_at` while the
+  column is absent.
+  Verified in the KUT repository: `supabase/tests/database/midweek_draw_from_lock.test.sql`
+  (49: before the lock, between the lock and round 1, round 1 under way, the
+  final playing, after the final, a void week, an undrawn week past its lock,
+  the D3 owner-count rule, disabled and anon callers), every other database
+  suite and CI on KUT PR #152.
+  Read-only pre-checks from this branch: `migration list --linked` shows 82
+  entries with `20261012000000` the only local-only one and no remote-only
+  drift; the dry run would push exactly that file; the catalogue check reports
+  82 approved source migrations.
+  **Hosted smoke test after the push**: the version recorded, the draw view's
+  definer options, its grants, its column count, the entries view's column
+  count and dice gate, `midweek_current`'s last column, and `final_reveal_at`
+  gated in both tournament views. The local run returned
+  `t | security_invoker=false,security_barrier=true | t | 10 | 26 | t | evening_live | t`.

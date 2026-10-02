@@ -94,7 +94,8 @@ $expectedSources = @(
   @{ File = "20261010000000_market_listing_discard_value.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261010000000_market_listing_discard_value.sql" },
   @{ File = "20261011000000_midweek_evening_timing.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261011000000_midweek_evening_timing.sql" },
   @{ File = "20261012000000_midweek_draw_from_lock.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261012000000_midweek_draw_from_lock.sql" },
-  @{ File = "20261013000000_midweek_result_for_everyone.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261013000000_midweek_result_for_everyone.sql" }
+  @{ File = "20261013000000_midweek_result_for_everyone.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261013000000_midweek_result_for_everyone.sql" },
+  @{ File = "20261014000000_midweek_live_reveal.sql"; Source = Join-Path $parentDirectory "kut\supabase\migrations\20261014000000_midweek_live_reveal.sql" }
 )
 
 foreach ($entry in $expectedSources) {

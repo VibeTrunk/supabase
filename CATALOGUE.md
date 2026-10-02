@@ -1348,3 +1348,38 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   **Hosted smoke test after the push**: the version recorded, the new message
   step in the function, definer mode, and no execute grant to members or the
   service role. The local run returned `t | t | t | t | f | f`.
+
+- `20261014000000_midweek_live_reveal.sql` (**catalogued, not yet applied**)
+  The Midweek evening unfolds event by event in the member views (MM 2.0
+  PR 4, B3, BUILD_SPEC §44.9, §44.14, ADR-106 amending ADR-095 and ADR-105;
+  owner decision Q7, uniform pacing), merged in KUT PR #166 (`bf21601`). Views
+  only. `kut.midweek_matches_public` keeps the pairing, kick-off, win chance and
+  day rolls from kick-off, but shows goals, penalties, `winner_side` and
+  `winner_user_id` only once the match has ended; it appends `ends_at` (null
+  until passed: a late end gives a shoot-out away) and `in_play`.
+  `kut.midweek_events_public` shows each event from its own `reveal_at` and
+  appends it. `kut.midweek_tournaments_public` names the champion from the end
+  of the final. Weeks simulated before ADR-104 have no stored times and still
+  show whole matches at kick-off. All three stay definer views with a barrier,
+  gated on `kut.is_active_member()`, grants unchanged.
+  **No DML. Tier: additive** (views only, columns appended): fresh cold-verified
+  backup before the push.
+  **Reverse DDL**: drop and re-create `kut.midweek_matches_public` and
+  `kut.midweek_events_public` from `20261005000000_midweek_engine.sql` section
+  5 (a view cannot lose a column) with their grants and comments; re-create
+  `kut.midweek_tournaments_public` from `20261012000000_midweek_draw_from_lock.sql`
+  section 3.
+  **Deploy ordering**: KUT PR #165 (F6, ADR-115) is deployed and already masks
+  in-play rows on the pages from each match's stored end, so the pages look the
+  same before and after the push; KUT PR #166 adds no page code. Not to be
+  pushed while a Wednesday evening is running (lock to payout).
+  Verified in the KUT repository: `supabase/tests/database/midweek_live_reveal.test.sql`
+  (32: before kick-off, a minute in, mid shoot-out, the final in play, complete,
+  a pre-ADR-104 week), `midweek_evening_timing.test.sql` (42: no champion while
+  the final plays), every other database suite, authenticated E2E at 320, 412
+  and 1440 px against these views, and CI on KUT PR #166.
+  **Hosted smoke test after the push**: the version recorded, the appended
+  columns and column counts of both views, the event and champion gates, the
+  matches view's definer options, and members' but not anon's read. The local
+  run returned
+  `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`.

@@ -1311,8 +1311,14 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   gated in both tournament views. The local run returned
   `t | security_invoker=false,security_barrier=true | t | 10 | 26 | t | evening_live | t`.
 
-- `20261013000000_midweek_result_for_everyone.sql` (**catalogued, not yet
-  applied**)
+- `20261013000000_midweek_result_for_everyone.sql` (**applied 2026-10-02**):
+  **Pushed 2026-10-02** from this repository, on its own `db push`, after
+  catalogue PR #68 merged (`2a87612`), on the fresh backup `20261002-232536`.
+  The KUT production gate passed beforehand for candidate `b468a48`. A dry
+  run from the merged main just before the push named only this file; no
+  evening was running. **Hosted smoke test:** the one-row query (in KUT's
+  `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL editor; the
+  local run returned `t | t | t | t | f | f`.
   A Midweek Madness result message for every entrant, not only those paid
   (MM 2.0 PR 5, BUILD_SPEC §44.7, §44.14, ADR-109 amending ADR-096; owner
   decision DR1-3), merged in KUT PR #161 (`b468a48`). Re-creates

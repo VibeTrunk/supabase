@@ -1310,3 +1310,35 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   count and dice gate, `midweek_current`'s last column, and `final_reveal_at`
   gated in both tournament views. The local run returned
   `t | security_invoker=false,security_barrier=true | t | 10 | 26 | t | evening_live | t`.
+
+- `20261013000000_midweek_result_for_everyone.sql` (**catalogued, not yet
+  applied**)
+  A Midweek Madness result message for every entrant, not only those paid
+  (MM 2.0 PR 5, BUILD_SPEC §44.7, §44.14, ADR-109 amending ADR-096; owner
+  decision DR1-3), merged in KUT PR #161 (`b468a48`). Re-creates
+  `kut._mm_pay_tournament(uuid)` (same signature, security definer, internal:
+  revoked from public, anon and authenticated, as before). **The payment part
+  is unchanged word for word** (rewards, ledger rows, wallets, return value;
+  Part L #26 untouched). Only its message step changes: one `midweek_result`
+  per entrant not disabled, titled by finish ("You won Midweek Madness", "You
+  went out in the quarter-finals"), with who beat them and how, their coins if
+  any, the champion (not on the runner-up's) and, for an auto squad, "Your auto
+  squad played for you." The reference stays the tournament. Idempotent through
+  the inbox's unique index, as before.
+  **No DML at push time. Tier: data-changing** (it changes what the worker
+  writes when it pays a week): fresh cold-verified backup before the push.
+  **Reverse DDL**: re-create `kut._mm_pay_tournament` from
+  `20261006000000_midweek_payouts.sql` section 4 and re-apply its revoke.
+  **Deploy ordering**: no page reads the message text; KUT PR #161 deployed on
+  merge with nothing depending on the push. A week paid before the push keeps
+  its old messages. Not to be pushed while a Wednesday evening is running (lock
+  to payout).
+  Verified in the KUT repository: `supabase/tests/database/midweek_payouts.test.sql`
+  (65: one message per entrant per tournament, none for an opted-out or a
+  disabled member, the title by finish, the champion's and the runner-up's
+  exact bodies, first-match losers told with no coins, the auto-squad line only
+  for auto squads, a second call adds nothing), every other database suite, the
+  `midweek-race` integration test (one message per entrant) and CI on KUT PR #161.
+  **Hosted smoke test after the push**: the version recorded, the new message
+  step in the function, definer mode, and no execute grant to members or the
+  service role. The local run returned `t | t | t | t | f | f`.

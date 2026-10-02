@@ -1202,8 +1202,17 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   function (must be 0). The local run returned
   `discard_value | {security_invoker=false,security_barrier=true} | t | f | 0 | 0 | 0`.
 
-- `20261011000000_midweek_evening_timing.sql` (**catalogued, not yet
-  applied**): KUT's Midweek Madness evening on a versioned clock (MM 2.0 B1,
+- `20261011000000_midweek_evening_timing.sql` (**applied 2026-10-02**):
+  **Pushed 2026-10-02** from this repository, on its own `db push`, after
+  catalogue PR #64 merged (`a8e71fb`), on the fresh backup `20261002-091630`.
+  The KUT production gate passed beforehand for candidate `5da5dd8` (KUT #147
+  plus the KB-032 layout fix #148, which unblocked the gate's E2E). Afterwards
+  `migration list --linked` shows 81 entries, all present locally and remotely.
+  **Smoke-tested on hosted.** In the SQL editor, one row confirmed all of the
+  smoke checks below; the open week of 5 Oct moved to version 2 and now locks
+  Wednesday 19:55, and the one past week stays on version 1:
+  `2 | 3 | true | 2 | 2026-10-05 v2 Wed 19:55 | 1 | 0 | 0 | schedule_version`.
+  KUT's Midweek Madness evening on a versioned clock (MM 2.0 B1,
   BUILD_SPEC §44.1, §44.7, §44.11, §44.14, §145, Part L #25, ADR-104), merged
   in KUT PR #147 (`199b126`). Squads lock Wednesday 19:55, round r starts at
   `lock + 5 + 15 × (r − 1)` minutes, and the payout waits for the end of the

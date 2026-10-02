@@ -1355,9 +1355,9 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   The KUT production gate passed beforehand for candidate `bf21601`. A dry
   run from the merged main just before the push named only this file; no
   evening was running (Saturday). After the push `migration list --linked`
-  showed 84 local and 84 remote, no drift. **Hosted smoke test:** the one-row
-  query (in KUT's `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL
-  editor; the local run returned
+  showed 84 local and 84 remote, no drift. **Hosted smoke test:** the owner
+  ran the one-row query (in KUT's `docs/DEPLOYMENTS.md`) in the SQL editor and
+  confirmed it matched the local run,
   `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`.
   The Midweek evening unfolds event by event in the member views (MM 2.0
   PR 4, B3, BUILD_SPEC §44.9, §44.14, ADR-106 amending ADR-095 and ADR-105;

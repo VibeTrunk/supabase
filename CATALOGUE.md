@@ -1201,3 +1201,56 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   listing count, how many have a null value, and how many disagree with the
   function (must be 0). The local run returned
   `discard_value | {security_invoker=false,security_barrier=true} | t | f | 0 | 0 | 0`.
+
+- `20261011000000_midweek_evening_timing.sql` (**catalogued, not yet
+  applied**): KUT's Midweek Madness evening on a versioned clock (MM 2.0 B1,
+  BUILD_SPEC §44.1, §44.7, §44.11, §44.14, §145, Part L #25, ADR-104), merged
+  in KUT PR #147 (`199b126`). Squads lock Wednesday 19:55, round r starts at
+  `lock + 5 + 15 × (r − 1)` minutes, and the payout waits for the end of the
+  final. **DDL**: `kut._mm_config()` re-created with `schedule = {lockDayOffset,
+  current: 2, versions: {1, 2}}` (every other key unchanged); new internal
+  `kut._mm_schedule(int)`, `kut._mm_lock_at(date, int)`,
+  `kut._mm_round_start_at(timestamptz, int, int)`, `kut._mm_match_timing(jsonb,
+  int)`; `kut._mm_lock_at(date)` re-created to mean the current version;
+  `kut._mm_reveal_at(timestamptz, integer)` dropped. `kut.midweek_tournaments`
+  gains `schedule_version smallint not null` (check 1–2; existing rows 1, then
+  default 2), `kut.midweek_matches` gains `ends_at` (check `>= reveal_at`),
+  `kut.midweek_match_events` gains `reveal_at`, all nullable on rows already
+  simulated. Re-created: `kut._mm_guard_tournament` (the version is fixed once a
+  week locks), `kut._mm_lock_tournament` (stores each match's start and end and
+  each event's time; `final_reveal_at` = the end of the final),
+  `kut._mm_open_next` (names the current version),
+  `kut.admin_midweek_rehearsal` (the week's clock, each round's `ends_at`,
+  `schedule_version`). `kut.midweek_current` and
+  `kut.midweek_tournaments_public` re-created with `schedule_version` appended
+  last, definer mode, barrier and member gate unchanged. Every `kut._mm_*`
+  function revoked from public, anon and authenticated again.
+  **DML**: the open tournament moves to version 2, its lock from 20:00 to 19:55
+  Amsterdam, unless 19:55 has already passed. **Tier: data-changing** (it
+  re-times the open week's lock and changes when the payout runs): fresh backup
+  `20261002-091630`, cold-verified, no cards in escrow.
+  **Reverse DDL**: in the migration's header (move an open version-2 week back
+  first, then re-create the views from `20261003000000`/`20261005000000` and the
+  functions from `20261005000000`, drop the four new functions, the three
+  columns).
+  **Deploy ordering**: KUT PR #147 deployed on merge. The pages read both views
+  with `select("*")` and treat a row without `schedule_version` as version 1,
+  which every hosted week is until this push; the payout functions are
+  unchanged and simply wait for `final_reveal_at`.
+  Verified in the KUT repository: `supabase/tests/database/midweek_evening_timing.test.sql`
+  (42: the clock in summer and winter time, the open step, version-2 starts,
+  ends and event times, payout refused while the final plays and paid after,
+  version 1 side by side, the guards, the views, the rehearsal), the regenerated
+  `midweek_engine_parity.test.sql` (190: SQL and TypeScript clocks agree, no
+  engine result changed), every other database suite (engine and payouts now
+  pin version 1) and CI on KUT PR #147.
+  Read-only pre-checks from this branch: `migration list --linked` shows 81
+  entries with `20261011000000` the only local-only one and no remote-only
+  drift; the dry run would push exactly that file; the catalogue check reports
+  81 approved source migrations.
+  **Hosted smoke test after the push**: the current version, the three new
+  columns, the old reveal function gone, the column default, the open week with
+  its version and Amsterdam lock time, past weeks on version 1 and on any other
+  version, matches with a stored end (0 until the next lock), and the tournament
+  list's last column. The local run, with an open week of 5 Oct, returned
+  `2 | 3 | t | 2 | 2026-10-05 v2 Wed 19:55 | 0 | 0 | 0 | schedule_version`.

@@ -1316,9 +1316,9 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   catalogue PR #68 merged (`2a87612`), on the fresh backup `20261002-232536`.
   The KUT production gate passed beforehand for candidate `b468a48`. A dry
   run from the merged main just before the push named only this file; no
-  evening was running. **Hosted smoke test:** the one-row query (in KUT's
-  `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL editor; the
-  local run returned `t | t | t | t | f | f`.
+  evening was running. **Hosted smoke test:** the owner ran the one-row query
+  (in KUT's `docs/DEPLOYMENTS.md`) in the SQL editor and confirmed it matched
+  the local run, `t | t | t | t | f | f`.
   A Midweek Madness result message for every entrant, not only those paid
   (MM 2.0 PR 5, BUILD_SPEC §44.7, §44.14, ADR-109 amending ADR-096; owner
   decision DR1-3), merged in KUT PR #161 (`b468a48`). Re-creates
@@ -1349,7 +1349,16 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   step in the function, definer mode, and no execute grant to members or the
   service role. The local run returned `t | t | t | t | f | f`.
 
-- `20261014000000_midweek_live_reveal.sql` (**catalogued, not yet applied**)
+- `20261014000000_midweek_live_reveal.sql` (**applied 2026-10-03**):
+  **Pushed 2026-10-03** from this repository, on its own `db push`, after
+  catalogue PR #70 merged (`aa734d0`), on the fresh backup `20261003-001237`.
+  The KUT production gate passed beforehand for candidate `bf21601`. A dry
+  run from the merged main just before the push named only this file; no
+  evening was running (Saturday). After the push `migration list --linked`
+  showed 84 local and 84 remote, no drift. **Hosted smoke test:** the one-row
+  query (in KUT's `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL
+  editor; the local run returned
+  `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`.
   The Midweek evening unfolds event by event in the member views (MM 2.0
   PR 4, B3, BUILD_SPEC §44.9, §44.14, ADR-106 amending ADR-095 and ADR-105;
   owner decision Q7, uniform pacing), merged in KUT PR #166 (`bf21601`). Views

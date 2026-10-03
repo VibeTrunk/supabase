@@ -1441,7 +1441,17 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `t | t | f | t | tank | t | f | 0 |` (no week open locally; hosted should end
   in the open week, `2026-10-05`).
 
-- `20261016000000_midweek_balance.sql` (**catalogued, not yet applied**)
+- `20261016000000_midweek_balance.sql` (**applied 2026-10-03**):
+  **Pushed 2026-10-03** from this repository, on its own `db push`, after
+  catalogue PR #75 merged (`0832f6f`), on the fresh backup `20261003-122258`.
+  The KUT production gate passed beforehand for candidate `b96ee52`. A dry
+  run from the merged main just before the push named only this file; no
+  evening was running (Saturday). After the push `migration list --linked`
+  showed 86 local and 86 remote, no drift. **Hosted smoke test:** the owner
+  ran the one-row query (in KUT's `docs/DEPLOYMENTS.md`) in the SQL editor and
+  confirmed it matched the local run below, with the open week `2026-10-05` in
+  the last column. That week (Wed 7 Oct) is
+  the first played under the new balance.
   Balanced squads beat All-rounders (MM 2.0 PR 8, C2, BUILD_SPEC §44.3-§44.5,
   §44.12, §44.14, §145, ADR-116 amending ADR-089 and ADR-092; owner Q13
   interview and tuning sign-off 2026-10-03), merged in KUT PR #172

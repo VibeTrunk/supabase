@@ -1490,3 +1490,45 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   rule, no balanced entries yet and the open week. The local run returned
   `t | 3 | [0, 2, 2] | 1120000 | 681472 | [2000000, 1000000, 200000] | balance_ppm | f | 0 |`
   (no week open locally; hosted should end in the open week, `2026-10-05`).
+
+- `20261017000000_midweek_predictions.sql` (catalogued, not yet applied):
+  Predictions for members who are out (MM 2.0 D, BUILD_SPEC §44.7, §44.9,
+  §44.13, §44.14, §145, Part L #28, ADR-118 amending ADR-096; owner Q2
+  interview 2026-10-03), in KUT PR #175. A member whose own match has ended
+  in defeat picks the winner of each later match before its kick-off, once
+  both its feeders have ended; correct picks pay 30 split over the matches
+  after round 1 at the payout. Re-creates `wallet_ledger_reason_check` with
+  `midweek_prediction` appended; adds `kut._mm_prediction_coins(integer)`
+  (internal), `kut.midweek_predictions` and `kut.midweek_prediction_rewards`
+  (RLS on, service role reads) with their guard triggers
+  `kut._mm_guard_prediction()` and `kut._mm_guard_prediction_reward()` (Part L
+  #28), `kut.save_midweek_prediction(uuid, integer, integer, uuid)`
+  (authenticated, service role), and the views `kut.my_midweek_predictions`,
+  `kut.my_midweek_prediction_rewards` and
+  `kut.midweek_prediction_splits_public` (definer, gated on
+  `kut.is_active_member()`); re-creates `kut._mm_pay_tournament(uuid)` with
+  the wins step unchanged, then correct picks, then the result message with
+  one more sentence for a member who predicted.
+  **No DML at the push. Tier: data-changing** (it widens what the ledger
+  accepts, adds a faucet and changes what the worker writes when it pays a
+  week): fresh cold-verified backup before the push.
+  **Reverse DDL** (no prediction saved yet, so nothing paid): re-create
+  `kut._mm_pay_tournament` from `20261013000000_midweek_result_for_everyone.sql`;
+  drop the three views, both tables, `kut.save_midweek_prediction`, both guard
+  functions and `kut._mm_prediction_coins`; re-create the ledger constraint
+  from `20261006000000_midweek_payouts.sql` section 1 once no ledger row has
+  reason `midweek_prediction`.
+  **Deploy ordering**: no KUT page reads any of it yet (the pages follow a
+  design mock), so the Vercel deploy on merge changes nothing, and with no page
+  nobody can save a pick, so the payout pays nothing extra. Not to be pushed
+  while a Wednesday evening is running (lock to payout).
+  Verified in the KUT repository: `supabase/tests/database/midweek_predictions.test.sql`
+  (47), every other database suite (37 files, 1,575 assertions), the
+  integration suites (7 files, 16 tests), authenticated E2E (49 passed, 1
+  expected skip), and CI on KUT PR #175.
+  **Hosted smoke test after the push**: the version recorded, the ledger
+  reason, the coin rates for 2 to 5 rounds, the member's execute grant on the
+  save, no member read on the table, both guard triggers, the payout paying
+  picks, no picks yet and the open week. The local run returned
+  `t | t | {30,10,4,2} | t | f | 2 | t | 0 |` (no week open locally; hosted
+  should end in the open week).

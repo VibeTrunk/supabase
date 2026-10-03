@@ -1392,3 +1392,40 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   matches view's definer options, and members' but not anon's read. The local
   run returned
   `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`.
+
+- `20261015000000_midweek_archetype_rotation.sql` (**catalogued, not yet applied**)
+  Unclaimed Players' archetypes rotate weekly at the Midweek open (MM 2.0 PR 7,
+  C1, BUILD_SPEC §44.2, §44.11, §44.14, new Part L #27, ADR-110 amending
+  ADR-027 and ADR-099; owner decisions Q8 no smoothing, Q9 accept), merged in
+  KUT PR #170 (`d8d5739`). Adds `kut.midweek_archetype_rotations` (RLS on,
+  service-role select only), `kut._mm_rotation_archetype(bytea, uuid)` (rng.ts
+  `uniform` over the seven archetypes, tag `rotation:<player id>`) and
+  `kut._mm_rotate_archetypes(bytea)` (every active, collectible Player with no
+  linked account takes their draw; rebuilds the active season once if anything
+  changed; internal, no grants). Re-creates `kut._mm_open_next`: a transaction
+  advisory lock and a second running-week check, then the rotation with the new
+  week's secret seed right before the tournament insert, so the ADR-099
+  snapshot freezes it, each change logged against the new week; a clash on
+  `week_start` now raises instead of `on conflict do nothing`.
+  **No DML at the push. Tier: data-changing** (from the next open the worker
+  rewrites `kut.players.archetype` and the season's stats every week): fresh
+  cold-verified backup before the push.
+  **Reverse DDL**: re-create `kut._mm_open_next` from
+  `20261011000000_midweek_evening_timing.sql` section 5; drop
+  `kut._mm_rotate_archetypes(bytea)`, `kut._mm_rotation_archetype(bytea, uuid)`
+  and `kut.midweek_archetype_rotations`. Rotated archetypes stay; each log row's
+  `from_archetype` restores one.
+  **Deploy ordering**: KUT PR #170 changes only how-it-works and
+  `/settings/card` copy, which reads nothing new. The week open at the push
+  keeps its archetypes; the first rotation runs when the worker opens the
+  following week. Not to be pushed while a Wednesday evening is running (lock
+  to payout).
+  Verified in the KUT repository: `supabase/tests/database/midweek_archetype_rotation.test.sql`
+  (34), every other database suite, `tests/integration/midweek-rotation.test.ts`
+  (three worker calls racing through `authenticator` with safeupdate loaded),
+  authenticated E2E, and CI on KUT PR #170.
+  **Hosted smoke test after the push**: the version recorded, the log's RLS and
+  grants, a fixed draw, the open step's lock-rotate-log order, no execute grant
+  on the rotation, an empty log and the open week. The local run returned
+  `t | t | f | t | tank | t | f | 0 |` (no week open locally; hosted should end
+  in the open week, `2026-10-05`).

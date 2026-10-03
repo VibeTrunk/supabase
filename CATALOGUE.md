@@ -1393,7 +1393,18 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   run returned
   `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`.
 
-- `20261015000000_midweek_archetype_rotation.sql` (**catalogued, not yet applied**)
+- `20261015000000_midweek_archetype_rotation.sql` (**applied 2026-10-03**):
+  **Pushed 2026-10-03** from this repository, on its own `db push`, after
+  catalogue PR #73 merged (`eba80ae`), on the fresh backup `20261003-020935`.
+  The KUT production gate passed beforehand for candidate `d8d5739`. A dry
+  run from the merged main just before the push named only this file; no
+  evening was running (Saturday). After the push `migration list --linked`
+  showed 85 local and 85 remote, no drift. **Hosted smoke test:** the one-row
+  query (in KUT's `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL
+  editor; the local run returned `t | t | f | t | tank | t | f | 0 |`, and on
+  hosted the last column should be the open week, `2026-10-05`. The week open
+  at the push keeps its archetypes; the first rotation runs when the worker
+  opens the week of Wed 14 Oct, after the 7 Oct payout.
   Unclaimed Players' archetypes rotate weekly at the Midweek open (MM 2.0 PR 7,
   C1, BUILD_SPEC §44.2, §44.11, §44.14, new Part L #27, ADR-110 amending
   ADR-027 and ADR-099; owner decisions Q8 no smoothing, Q9 accept), merged in

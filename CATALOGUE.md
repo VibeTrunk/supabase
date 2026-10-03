@@ -1491,7 +1491,17 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `t | 3 | [0, 2, 2] | 1120000 | 681472 | [2000000, 1000000, 200000] | balance_ppm | f | 0 |`
   (no week open locally; hosted should end in the open week, `2026-10-05`).
 
-- `20261017000000_midweek_predictions.sql` (catalogued, not yet applied):
+- `20261017000000_midweek_predictions.sql` (**applied 2026-10-03**):
+  **Pushed 2026-10-03** from this repository, on its own `db push`, after
+  catalogue PR #77 merged (`aa52104`), on the fresh backup `20261003-134420`.
+  The KUT production gate passed beforehand for candidate `9a029e6` (its first
+  run failed closed on a passing clock skew between Windows and the Docker VM;
+  the rerun passed). A dry run from the merged main just before the push named
+  only this file; no evening was running (Saturday). After the push
+  `migration list --linked` showed 87 local and 87 remote, no drift.
+  **Hosted smoke test:** awaiting the owner's run of the one-row query (in
+  KUT's `docs/DEPLOYMENTS.md`); hosted should match the local run below and end
+  in the open week, `2026-10-05`.
   Predictions for members who are out (MM 2.0 D, BUILD_SPEC §44.7, §44.9,
   §44.13, §44.14, §145, Part L #28, ADR-118 amending ADR-096; owner Q2
   interview 2026-10-03), in KUT PR #175. A member whose own match has ended

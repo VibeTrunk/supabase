@@ -1399,10 +1399,10 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   The KUT production gate passed beforehand for candidate `d8d5739`. A dry
   run from the merged main just before the push named only this file; no
   evening was running (Saturday). After the push `migration list --linked`
-  showed 85 local and 85 remote, no drift. **Hosted smoke test:** the one-row
-  query (in KUT's `docs/DEPLOYMENTS.md`) was handed to the owner for the SQL
-  editor; the local run returned `t | t | f | t | tank | t | f | 0 |`, and on
-  hosted the last column should be the open week, `2026-10-05`. The week open
+  showed 85 local and 85 remote, no drift. **Hosted smoke test:** the owner
+  ran the one-row query (in KUT's `docs/DEPLOYMENTS.md`) in the SQL editor and
+  confirmed it matched the local run, `t | t | f | t | tank | t | f | 0 |`,
+  with the open week `2026-10-05` in the last column. The week open
   at the push keeps its archetypes; the first rotation runs when the worker
   opens the week of Wed 14 Oct, after the 7 Oct payout.
   Unclaimed Players' archetypes rotate weekly at the Midweek open (MM 2.0 PR 7,

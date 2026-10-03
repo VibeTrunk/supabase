@@ -1499,9 +1499,10 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   the rerun passed). A dry run from the merged main just before the push named
   only this file; no evening was running (Saturday). After the push
   `migration list --linked` showed 87 local and 87 remote, no drift.
-  **Hosted smoke test:** awaiting the owner's run of the one-row query (in
-  KUT's `docs/DEPLOYMENTS.md`); hosted should match the local run below and end
-  in the open week, `2026-10-05`.
+  **Hosted smoke test:** passed (the owner's run of the one-row query in KUT's
+  `docs/DEPLOYMENTS.md`, 2026-10-03): `true | true | {30,10,4,2} | true |
+  false | 2 | true | 0 | 2026-10-05`, matching the local run below and ending
+  in the open week.
   Predictions for members who are out (MM 2.0 D, BUILD_SPEC §44.7, §44.9,
   §44.13, §44.14, §145, Part L #28, ADR-118 amending ADR-096; owner Q2
   interview 2026-10-03), in KUT PR #175. A member whose own match has ended

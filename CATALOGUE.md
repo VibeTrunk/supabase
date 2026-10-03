@@ -1440,3 +1440,43 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   on the rotation, an empty log and the open week. The local run returned
   `t | t | f | t | tank | t | f | 0 |` (no week open locally; hosted should end
   in the open week, `2026-10-05`).
+
+- `20261016000000_midweek_balance.sql` (**catalogued, not yet applied**)
+  Balanced squads beat All-rounders (MM 2.0 PR 8, C2, BUILD_SPEC §44.3-§44.5,
+  §44.12, §44.14, §145, ADR-116 amending ADR-089 and ADR-092; owner Q13
+  interview and tuning sign-off 2026-10-03), merged in KUT PR #172
+  (`b96ee52`). Each archetype's plusses per line become the engine's input:
+  re-creates `kut._mm_config()` (the plusses table, line values, the
+  weakest-line rule, `keeperPpm`, `match.defenceWeightPpm`, OVR factor 1.12,
+  auto factor 0.55), `kut._mm_lines`, `kut._mm_play_match`,
+  `kut._mm_simulate` and `kut._mm_lock_tournament`; adds
+  `kut._mm_balance(text[], integer)` (internal, no grants) and
+  `kut.midweek_entries.balance_ppm` (nullable; null on every week already
+  locked); re-creates `kut.midweek_entries_public` with `balance_ppm` appended.
+  No invariant changes.
+  **No DML at the push. Tier: data-changing** (it changes what the lock step
+  computes and so who is paid): fresh cold-verified backup before the push.
+  **Reverse DDL**: drop and re-create `kut.midweek_entries_public` from
+  `20261012000000_midweek_draw_from_lock.sql`; re-create
+  `kut._mm_lock_tournament` and `kut._mm_config` from
+  `20261011000000_midweek_evening_timing.sql`; re-create `kut._mm_lines`,
+  `kut._mm_play_match` and `kut._mm_simulate` from
+  `20261005000000_midweek_engine.sql`; drop `kut._mm_balance(text[], integer)`
+  and `kut.midweek_entries.balance_ppm`. Weeks locked on the new engine keep
+  their stored results.
+  **Deploy ordering**: KUT PR #172's pages read `midweek_entries_public` with
+  `select("*")` and treat a missing or null `balance_ppm` as no balance chip,
+  so they work before the push. The week open at the push locks on the new
+  rules (owner: switch at the push). Not to be pushed while a Wednesday evening
+  is running (lock to payout).
+  Verified in the KUT repository: `supabase/tests/database/midweek_balance.test.sql`
+  (23), the regenerated `midweek_engine_parity.test.sql` (199), every other
+  database suite (36 files, 1,528 assertions), the midweek integration suites,
+  `npm run sim:midweek` at 5,000 seasons, authenticated E2E, and CI on KUT PR
+  #172.
+  **Hosted smoke test after the push**: the version recorded, the rule's
+  threshold, the Tank's plusses, the OVR factor, a one-line stack's balance,
+  a Finisher's lines, the view's last column, no member execute grant on the
+  rule, no balanced entries yet and the open week. The local run returned
+  `t | 3 | [0, 2, 2] | 1120000 | 681472 | [2000000, 1000000, 200000] | balance_ppm | f | 0 |`
+  (no week open locally; hosted should end in the open week, `2026-10-05`).

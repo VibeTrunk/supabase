@@ -1543,3 +1543,23 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   picks, no picks yet and the open week. The local run returned
   `t | t | {30,10,4,2} | t | f | 2 | t | 0 |` (no week open locally; hosted
   should end in the open week).
+
+- `20261018000000_special_snapshot_tiers.sql` (**catalogued, not yet applied**):
+  KUT KB-038 / ADR-121, [KUT PR #184](https://github.com/VibeTrunk/kut/pull/184).
+  Follows `20261017000000_midweek_predictions.sql`. Projection-only correction:
+  collection, market, saved pack results and offered-card JSON read Specials'
+  immutable `snapshot_rarity_tier`; Live tiers and missing-state floors remain.
+  Preserves view column order/types, owners, grants, security modes and member
+  gates. No DML, issuance, rating/pricing/economy change or snapshot rewrite.
+  **Tier: additive.** Local KUT validation: 51 new pgTAP assertions; full suite
+  38 files / 1,626 assertions and 7 integration files / 16 tests passed.
+  The SQL is copied byte-for-byte from the reviewed KUT migration; catalogue
+  verification includes this file.
+  **Not hosted:** fresh cold-verified backup, exact-candidate release gate,
+  linked-ledger counts, central dry run and explicit hosted-application
+  authorization remain required. No hosted smoke result is claimed.
+  **Rollback:** re-create the four prior views from the source versions named
+  in the SQL (collection: `20260911000000`; market: `20261010000000`; pack
+  results: `20261002000000`; offers: `20260928000000`); no drop, edition rewrite
+  or grant change. Review and merge this catalogue PR separately from KUT
+  frontend PR #183; apply only from this central repository after sign-off.

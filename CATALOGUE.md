@@ -1563,3 +1563,14 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   results: `20261002000000`; offers: `20260928000000`); no drop, edition rewrite
   or grant change. Review and merge this catalogue PR separately from KUT
   frontend PR #183; apply only from this central repository after sign-off.
+
+- `20261019000000_basic_pack_price_250.sql` (**catalogued, not yet applied**;
+  KUT PR #207, ADR-136). Raises the `tfh-pack` definition price from 175 to
+  250 KUT Coins. Existing openings retain their recorded `price_paid` and
+  ledger entries. The migration requires exactly one matching definition row
+  and changes only that row. **Tier: data-changing** (one `UPDATE` to a pack
+  definition); take a fresh cold-verified encrypted backup immediately before
+  application. **Rollback:** restore `price = 175` for `slug = 'tfh-pack'` if
+  the row still has `price = 250`; the prior value is 175. Pre/post ledger
+  counts and hosted smoke evidence will be recorded in the applied entry.
+  The SQL is byte-for-byte from KUT and is checked by `verify-catalog.ps1`.

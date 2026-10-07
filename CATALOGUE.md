@@ -1544,7 +1544,7 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   `t | t | {30,10,4,2} | t | f | 2 | t | 0 |` (no week open locally; hosted
   should end in the open week).
 
-- `20261018000000_special_snapshot_tiers.sql` (**catalogued, not yet applied**):
+- `20261018000000_special_snapshot_tiers.sql` (**applied 2026-10-04**, catalogue PR #79):
   KUT KB-038 / ADR-121, [KUT PR #184](https://github.com/VibeTrunk/kut/pull/184).
   Follows `20261017000000_midweek_predictions.sql`. Projection-only correction:
   collection, market, saved pack results and offered-card JSON read Specials'
@@ -1555,14 +1555,33 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   38 files / 1,626 assertions and 7 integration files / 16 tests passed.
   The SQL is copied byte-for-byte from the reviewed KUT migration; catalogue
   verification includes this file.
-  **Not hosted:** fresh cold-verified backup, exact-candidate release gate,
-  linked-ledger counts, central dry run and explicit hosted-application
-  authorization remain required. No hosted smoke result is claimed.
+  **Hosted application:** separately authorized by the owner, from merged
+  central `main` `6c08eb0e84325a40185cf38034a6192c8dc4e78f`, after the canonical KUT
+  release gate passed for `13185dc8000970ee5d42b54503973c17aa50327f`.
+  Fresh backup `kut-backup-20261004-032324.sql.enc` was cold-verified independently
+  at creation and again at gate time. All seven exact-candidate CI checks
+  passed; unchanged authenticated Chromium/WebKit suite against a local
+  production build: 130 passed, two duplicate pack-test skips (not passes).
+  The first development-mode gate failed with five WebKit preview/layout
+  timeouts; a focused rerun passed three/failed two, and the production-mode
+  comparison passed all five before the complete gate passed. Cause unconfirmed;
+  no tests/code/timeouts/skips were changed. Local Next 16.3.5; locked 16.3.6 CI
+  passed. All fixtures were loopback-only.
+  **Ledger:** 88 local/87 remote before, this sole pending migration; final
+  central dry run named only this file. After: 88/88 match, zero pending;
+  vault updates skipped. Source verification: 88 shared; KUT parity: 87.
+  **Read-only hosted smoke:** all four definitions match tested local views;
+  owners, ACLs, column order/types and security modes/barriers unchanged.
+  Frozen Special count/hash unchanged (zero; none issued). Ordinary active
+  member reads all four projections; collection tiers satisfy the contract.
+  No hosted fixture rows/users created. Divergent Special tiers are covered by
+  the local 51 pgTAP assertions. Details: KUT docs/DEPLOYMENTS.md.
   **Rollback:** re-create the four prior views from the source versions named
   in the SQL (collection: `20260911000000`; market: `20261010000000`; pack
   results: `20261002000000`; offers: `20260928000000`); no drop, edition rewrite
-  or grant change. Review and merge this catalogue PR separately from KUT
-  frontend PR #183; apply only from this central repository after sign-off.
+  or grant change. Rollback was prepared, not executed, and needs separate
+  authorization. Frontend PR #183 and migration PR #184 were reviewed/merged
+  separately; hosted SQL was applied only from this central repository.
 
 - `20261019000000_basic_pack_price_250.sql` (**catalogued, not yet applied**;
   KUT PR #207, ADR-136). Raises the `tfh-pack` definition price from 175 to

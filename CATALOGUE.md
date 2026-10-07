@@ -1583,13 +1583,31 @@ bumps the "Latest applied migration" line in `CLAUDE.md`.
   authorization. Frontend PR #183 and migration PR #184 were reviewed/merged
   separately; hosted SQL was applied only from this central repository.
 
-- `20261019000000_basic_pack_price_250.sql` (**catalogued, not yet applied**;
-  KUT PR #207, ADR-136). Raises the `tfh-pack` definition price from 175 to
-  250 KUT Coins. Existing openings retain their recorded `price_paid` and
-  ledger entries. The migration requires exactly one matching definition row
-  and changes only that row. **Tier: data-changing** (one `UPDATE` to a pack
-  definition); take a fresh cold-verified encrypted backup immediately before
-  application. **Rollback:** restore `price = 175` for `slug = 'tfh-pack'` if
-  the row still has `price = 250`; the prior value is 175. Pre/post ledger
-  counts and hosted smoke evidence will be recorded in the applied entry.
-  The SQL is byte-for-byte from KUT and is checked by `verify-catalog.ps1`.
+- `20261019000000_basic_pack_price_250.sql` (**applied 2026-10-08**; KUT PR
+  #207 / ADR-136, catalogue PR #81). Raises the `tfh-pack` definition price
+  from 175 to 250 KUT Coins. Existing openings retain their recorded
+  `price_paid` and ledger entries. The migration required exactly one matching
+  definition row and changed only that row. **Tier: data-changing** (one
+  `UPDATE` to a pack definition).
+  **Application:** owner-authorized push from central `main`
+  `dfdfcdebea55e77b0884aa1c269eb523f0ad5e52`. Before: 89 local / 88 remote,
+  this sole local-only migration, no remote-only versions or drift; the dry run
+  named only this file. The catalogue check matched 89 sources.
+  **Backup:** the exact-SHA gate independently cold-verified
+  `kut-backup-20261007-234906.sql.enc`; immediately before the DB push, fresh
+  backup `kut-backup-20261008-001949.sql.enc` passed separate-process cold
+  verification at `2026-10-07T22:20:22Z`.
+  **After:** `migration list --linked` shows 89/89, zero pending and zero drift.
+  Hosted smoke query found exactly one `tfh-pack` definition at price 250.
+  The production gate passed for KUT SHA
+  `c91903730f121a7c260fb588fc4b7bb4424c96d6`; the unchanged authenticated suite
+  reported 175 passed, two approved duplicate-device skips, zero unexpected or
+  flaky cases. An earlier run hit a WebKit sign-in timeout and two subsequent
+  runs hit a Windows file lock during build cleanup; the final gate passed from
+  a fresh ordinary checkout with no code, test, timeout or skip changes.
+  Vercel deployment `dpl_DXBqscbVCbR5tLUvBazn6DSXqkcq` reached READY and
+  `kut.vibetrunk.com` was verified live on that exact SHA at
+  `2026-10-07T22:25:39Z`.
+  **Rollback:** if needed, restore `price = 175` for `slug = 'tfh-pack'` only
+  while the row still has `price = 250`; use a separately reviewed migration.
+  Historical openings and ledger entries are left intact.

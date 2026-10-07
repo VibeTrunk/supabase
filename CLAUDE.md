@@ -31,8 +31,8 @@ Every catalogued migration, with its tier, backup, pre- and post-push
 [`CATALOGUE.md`](CATALOGUE.md). Add new entries there, never here, so this
 file stays orientation.
 
-**Latest applied migration:** KUT's `20261018000000_special_snapshot_tiers.sql`
-(catalogue PR #79), applied 2026-10-04; all 88 local/remote versions match,
+**Latest applied migration:** KUT's `20261019000000_basic_pack_price_250.sql`
+(catalogue PR #81), applied 2026-10-08; all 89 local/remote versions match,
 with no pending migrations or drift. Verification and rollback: CATALOGUE.md.
 
 ## Repo status

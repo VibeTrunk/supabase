@@ -1,0 +1,149 @@
+name: apply-migrations
+
+# Applies catalogued migrations to the shared hosted project (VibeTrunk/kut
+# ADR-144). Dispatch it with a catalogue commit on main and the VibeTrunk/kut
+# commit that holds the same migration files.
+#
+# - plan: runs `migration list` and `db push --dry-run` at that commit, and
+#   refuses any pending migration without a byte-identical copy in kut.
+# - apply: plans the same commit again and needs the identical list, then a
+#   kut backup under an hour old, then runs `db push` and checks nothing is
+#   left pending. Skipped when nothing is pending.
+#
+# Both jobs use the `production` environment (main only, the owner as required
+# reviewer), the only place the database password lives. The first approval
+# shows the plan; the second applies it. The password reaches the CLI through
+# PGPASSWORD only, never a URL or an argument.
+
+on:
+  workflow_dispatch:
+    inputs:
+      catalogue_sha:
+        description: Catalogue commit on main to apply (full 40-character SHA)
+        required: true
+      kut_ref:
+        description: VibeTrunk/kut commit with the same migrations (the kut PR's head SHA, or main)
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apply-migrations
+  cancel-in-progress: false
+
+env:
+  SUPABASE: npx --yes supabase@2.118.0
+  CATALOGUE_SHA: ${{ inputs.catalogue_sha }}
+  KUT_REF: ${{ inputs.kut_ref }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - name: Check the inputs
+        run: |
+          [[ "$CATALOGUE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "catalogue_sha must be a full 40-character commit SHA." >&2; exit 1; }
+          [[ "$KUT_REF" == main || "$KUT_REF" =~ ^[0-9a-f]{40}$ ]] || { echo "kut_ref must be main or a full commit SHA." >&2; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.catalogue_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a commit on main
+        run: |
+          git merge-base --is-ancestor "$CATALOGUE_SHA" origin/main \
+            || { echo "$CATALOGUE_SHA is not on main. Merge the catalogue PR first." >&2; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: VibeTrunk/kut
+          ref: ${{ inputs.kut_ref }}
+          path: .kut
+          sparse-checkout: supabase/migrations
+          persist-credentials: false
+      - id: plan
+        name: Plan
+        env:
+          PGHOST: ${{ secrets.MIGRATION_PGHOST }}
+          PGUSER: ${{ secrets.MIGRATION_PGUSER }}
+          PGPASSWORD: ${{ secrets.MIGRATION_PGPASSWORD }}
+        run: |
+          set -euo pipefail
+          export DB_URL="postgresql://${PGUSER}@${PGHOST}:5432/postgres?sslmode=require"
+          bash scripts/ci/plan-migrations.sh .kut/supabase/migrations "$RUNNER_TEMP/plan.txt"
+          {
+            echo 'plan<<EOF_PLAN'
+            cat "$RUNNER_TEMP/plan.txt"
+            echo 'EOF_PLAN'
+            echo "count=$(wc -l < "$RUNNER_TEMP/plan.txt")"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Plan for \`$CATALOGUE_SHA\`"
+            if [[ -s "$RUNNER_TEMP/plan.txt" ]]; then
+              echo; echo '```'; cat "$RUNNER_TEMP/plan.txt"; echo '```'
+            else
+              echo; echo 'Up to date: nothing pending.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Require a fresh kut backup
+        if: steps.plan.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/check-backup-fresh.sh
+
+  apply:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      PGHOST: ${{ secrets.MIGRATION_PGHOST }}
+      PGUSER: ${{ secrets.MIGRATION_PGUSER }}
+      PGPASSWORD: ${{ secrets.MIGRATION_PGPASSWORD }}
+      PLANNED: ${{ needs.plan.outputs.plan }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.catalogue_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: VibeTrunk/kut
+          ref: ${{ inputs.kut_ref }}
+          path: .kut
+          sparse-checkout: supabase/migrations
+          persist-credentials: false
+      - name: Plan again and require the approved list
+        run: |
+          set -euo pipefail
+          export DB_URL="postgresql://${PGUSER}@${PGHOST}:5432/postgres?sslmode=require"
+          bash scripts/ci/plan-migrations.sh .kut/supabase/migrations "$RUNNER_TEMP/plan.txt"
+          printf '%s\n' "$PLANNED" > "$RUNNER_TEMP/approved.txt"
+          diff -u "$RUNNER_TEMP/approved.txt" "$RUNNER_TEMP/plan.txt" \
+            || { echo "The pending list changed since the approved plan; nothing was pushed." >&2; exit 1; }
+      - name: Require a fresh kut backup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/check-backup-fresh.sh
+      - name: Push
+        run: |
+          set -euo pipefail
+          read -r -a cli <<< "$SUPABASE"
+          "${cli[@]}" db push --agent no --yes --db-url "postgresql://${PGUSER}@${PGHOST}:5432/postgres?sslmode=require"
+      - name: Require nothing pending after the push
+        run: |
+          set -euo pipefail
+          export DB_URL="postgresql://${PGUSER}@${PGHOST}:5432/postgres?sslmode=require"
+          bash scripts/ci/plan-migrations.sh .kut/supabase/migrations "$RUNNER_TEMP/after.txt"
+          test ! -s "$RUNNER_TEMP/after.txt"
+          {
+            echo "### Applied at \`$CATALOGUE_SHA\`"
+            echo; echo '```'; printf '%s\n' "$PLANNED"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

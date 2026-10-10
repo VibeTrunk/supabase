@@ -5,21 +5,32 @@ Central migration catalogue for the single shared VibeTrunk Supabase project.
 ## Operator workflow
 
 1. Make the schema change in the owning app repository and verify it locally.
-2. Copy the immutable migration, unchanged, into this repository.
-3. Run `powershell -ExecutionPolicy Bypass -File scripts/verify-catalog.ps1`.
-4. Commit and review both repositories together.
-5. **`git pull` this repository before deploying.** `db push` reads the
-   migration files from the local working copy, not from GitHub, so a merged
-   catalogue PR that has not been pulled is invisible to it. The CLI then
-   reports "Remote database is up to date" and applies nothing. It fails safe —
-   a stale checkout under-applies rather than pushing something unexpected —
-   but it looks like a broken migration, and it has already cost one deploy
-   session (2026-09-22, `20260928000000`).
-6. From this repository only, create a verified encrypted backup, run
-   `npx supabase migration list --linked`, then `npx supabase db push --dry-run`.
-   Check the dry run names the migration you expect; if `migration list` does
-   not show it as local-only, go back to step 5.
-7. Apply with `npx supabase db push` only after explicit operator approval.
+2. Copy the immutable migration, unchanged, into this repository, add it to
+   `scripts/verify-catalog.ps1` and run
+   `powershell -ExecutionPolicy Bypass -File scripts/verify-catalog.ps1`.
+3. Review and merge the catalogue PR. For KUT, the order is in
+   `docs/RELEASING.md` of `VibeTrunk/kut`: its migration PR's database tests
+   pass first, and its `catalogue-parity` check turns green only after this
+   merge.
+4. Apply with the **`apply-migrations`** workflow (KUT ADR-144):
+
+   ```powershell
+   gh workflow run backup.yml -R VibeTrunk/kut   # a backup under an hour old
+   gh workflow run apply-migrations.yml -R VibeTrunk/supabase `
+     -f catalogue_sha=<catalogue main SHA> -f kut_ref=<kut PR head SHA>
+   ```
+
+   Approve the `production` environment once to see the plan (the job summary
+   lists every pending file and its SHA-256), then again to apply it. The plan
+   refuses any pending migration without a byte-identical copy in
+   `VibeTrunk/kut`; the apply job pushes only an identical list and checks
+   nothing is left pending. With nothing pending, the plan reports "up to date"
+   and the apply job is skipped.
+
+The workflow checks out the exact commit, so the old "`git pull` before
+`db push`" trap no longer applies. Another tool's migrations need their own
+route. A local `npx supabase db push` from this repository stays a fallback
+only, with the owner's explicit OK for that push.
 
 Individual tool repositories must never attempt to deploy their migrations to
 the shared project. This prevents Supabase's global migration ledger from

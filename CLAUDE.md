@@ -17,12 +17,14 @@ application code, and local database tests.
 3. A tool schema change requires the same SQL file in this catalogue and in
    the owning tool repository. `scripts/verify-catalog.ps1` checks the current
    KUT and Cogitster copies.
-4. Before a live migration: create a verified encrypted backup, run the
-   catalogue check, list remote migrations, and run `supabase db push --dry-run`.
+4. Live migrations go through `.github/workflows/apply-migrations.yml`
+   (README): a kut backup under an hour old, a plan of KUT-only migrations,
+   the owner's approval of the `production` environment, then the push. Its
+   database password exists only as that environment's secret.
 5. Never use `migration repair` to hide an unexpected version. Investigate the
    source repository and add its original migration to this catalogue instead.
-6. Credentials belong only in an ignored `.env.local`. Never print them or put
-   them in a command transcript.
+6. Locally, credentials belong only in an ignored `.env.local`. Never print
+   them or put them in a command transcript.
 
 ## Catalogue log
 
